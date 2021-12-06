@@ -2,6 +2,7 @@ use teloxide::types::{Sticker, InputFile};
 use teloxide::prelude::*;
 use frunk::Generic;
 use crate::dialogue::{Dialogue, Answer};
+use crate::logs;
 
 #[derive(Clone, Generic)]
 pub struct ReceiveNamesState {
@@ -16,6 +17,8 @@ async fn receive_names(
 ) -> TransitionOut<Dialogue> {
     match ans {
         Answer::String(text) =>  {
+            log::info!("{}",
+                logs::format_log_chat("Finishing dialogue", cx.chat_id()));
             handle_string(state, cx, text).await;
             exit()
         }
@@ -24,6 +27,8 @@ async fn receive_names(
                 sticker,
                 ..state
             };
+            log::info!("{}",
+                logs::format_log_chat("Waiting for names", cx.chat_id()));
             cx.answer("Great! Now specify aliases for the sticker separated by spaces.").await?;
             next(new_state)
         }

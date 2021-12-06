@@ -20,6 +20,7 @@ async fn run() {
         handle_message(message, dialogue).await.expect("Some problem happened")
     })
     .await;
+    log::info!("Closing the bot...");
 }
 
 async fn handle_message(

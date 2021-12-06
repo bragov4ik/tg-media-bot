@@ -8,6 +8,7 @@ pub fn format_log_chat(
     time + id_str.as_str() + message
 }
 
+#[allow(dead_code)]
 // Formats for logs something with timestamp
 pub fn format_log_time(
     message: &str
