@@ -16,15 +16,16 @@ async fn receive_names(
 ) -> TransitionOut<Dialogue> {
     match ans {
         Answer::String(text) =>  {
-            handle_string(state, cx, text);
+            handle_string(state, cx, text).await;
             exit()
         }
         Answer::Sticker(sticker) => {
-            let newState = ReceiveNamesState {
+            let new_state = ReceiveNamesState {
                 sticker,
                 ..state
             };
-            next(newState)
+            cx.answer("Great! Now specify aliases for the sticker separated by spaces.").await?;
+            next(new_state)
         }
     }
 }

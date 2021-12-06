@@ -10,6 +10,6 @@ async fn start(
     cx: TransitionIn<AutoSend<Bot>>,
     _ans: Answer,
 ) -> TransitionOut<Dialogue> {
-    cx.answer("To start send any sticker.");
+    cx.answer("To start send any sticker.").await?;
     next(ReceiveStickerState)
 }

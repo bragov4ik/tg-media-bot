@@ -11,6 +11,14 @@ async fn receive_sticker(
     cx: TransitionIn<AutoSend<Bot>>,
     ans: Answer,
 ) -> TransitionOut<Dialogue>{
-    cx.answer("Great! Now specify aliases for the sticker separated by spaces.");
-    next(ReceiveNamesState::up(state, ans))
+    match ans {
+        Answer::Sticker(sticker) => {
+            cx.answer("Great! Now specify aliases for the sticker separated by spaces.").await?;
+            next(ReceiveNamesState::up(state, sticker))
+        }
+        Answer::String(_) => {
+            cx.answer("Please send sticker.").await?;
+            next(state)
+        }
+    }
 }

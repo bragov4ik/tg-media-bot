@@ -6,20 +6,7 @@ use crate::dialogue::{Dialogue, Answer};
 
 #[tokio::main]
 async fn main() {
-    teloxide::enable_logging!();
-    log::info!("Starting bot...");
-    
-    let bot = Bot::from_env().auto_send();
-    
-    teloxide::repl(bot, |message| async move {
-        match message.update.text() {
-            Some(text) => log::info!("{}", text),
-            None => {},
-        }
-        message.answer("aboba").await?;
-        respond(())
-    })
-    .await;
+    run().await;
 }
 
 async fn run() {
@@ -30,7 +17,8 @@ async fn run() {
 
     teloxide::dialogues_repl(bot, |message, dialogue| async move {
         handle_message(message, dialogue).await.expect("Some problem happened")
-    });
+    })
+    .await;
 }
 
 async fn handle_message(
@@ -61,7 +49,8 @@ async fn handle_message(
                     return default_response(cx, dialogue);
                 }
             }
-            dialogue.react(cx, ans).await
+            let res = dialogue.react(cx, ans).await;
+            res
         }
         _ => {
             default_response(cx, dialogue)
