@@ -1,4 +1,5 @@
 mod dialogue;
+mod logs;
 
 use teloxide::{prelude::*};
 use teloxide::types::{MessageKind, MediaKind};
@@ -19,6 +20,7 @@ async fn run() {
         handle_message(message, dialogue).await.expect("Some problem happened")
     })
     .await;
+    log::info!("Closing the bot...");
 }
 
 async fn handle_message(
@@ -31,6 +33,8 @@ async fn handle_message(
         cx: UpdateWithCx<AutoSend<Bot>, Message>,
         dialogue: Dialogue,
     ) -> TransitionOut<Dialogue> {
+        log::info!("{}", logs::format_log_chat(
+            "Received something else", cx.chat_id()));
         cx.answer("Send a sticker to start.");
         next(dialogue)
     }
@@ -40,9 +44,13 @@ async fn handle_message(
             let ans: Answer;
             match &cmn.media_kind {
                 MediaKind::Text(media) => {
+                    log::info!("{}", logs::format_log_chat(
+                        "Received a text", cx.chat_id()));
                     ans = Answer::String(media.text.clone());
                 }
                 MediaKind::Sticker(media) => {
+                    log::info!("{}", logs::format_log_chat(
+                        "Received a sticker", cx.chat_id()));
                     ans = Answer::Sticker(media.sticker.clone());
                 }
                 _ => {
