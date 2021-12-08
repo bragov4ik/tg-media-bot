@@ -26,7 +26,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
-    - name: Install latest nightly
+    - name: Install latest
       uses: actions-rs/toolchain@v1
       with:
           toolchain: stable
@@ -41,6 +41,15 @@ jobs:
       with:
         command: check
         
+  format:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+          toolchain: stable
+          components: rustfmt
+          override: true
     - name: Run rustfmt check
       uses: mbrobbel/rustfmt-check@master
       with:
