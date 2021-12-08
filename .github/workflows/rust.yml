@@ -32,7 +32,7 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
-    - run: rustup component add fmt
+    - run: rustup component add rustfmt
     - uses: actions-rs/cargo@v1
       with:
           command: fmt
