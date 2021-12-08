@@ -1,9 +1,9 @@
 mod dialogue;
 mod logs;
 
-use teloxide::{prelude::*};
-use teloxide::types::{MessageKind, MediaKind};
-use crate::dialogue::{Dialogue, Answer};
+use crate::dialogue::{Answer, Dialogue};
+use teloxide::prelude::*;
+use teloxide::types::{MediaKind, MessageKind};
 
 #[tokio::main]
 async fn main() {
@@ -17,7 +17,9 @@ async fn run() {
     let bot = Bot::from_env().auto_send();
 
     teloxide::dialogues_repl(bot, |message, dialogue| async move {
-        handle_message(message, dialogue).await.expect("Some problem happened")
+        handle_message(message, dialogue)
+            .await
+            .expect("Some problem happened")
     })
     .await;
     log::info!("Closing the bot...");
@@ -27,14 +29,15 @@ async fn handle_message(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     dialogue: Dialogue,
 ) -> TransitionOut<Dialogue> {
-
     // Don't know hot to avoid repeating of this code properly
     fn default_response(
         cx: UpdateWithCx<AutoSend<Bot>, Message>,
         dialogue: Dialogue,
     ) -> TransitionOut<Dialogue> {
-        log::info!("{}", logs::format_log_chat(
-            "Received something else", cx.chat_id()));
+        log::info!(
+            "{}",
+            logs::format_log_chat("Received something else", cx.chat_id())
+        );
         cx.answer("Send a sticker to start.");
         next(dialogue)
     }
@@ -44,13 +47,14 @@ async fn handle_message(
             let ans: Answer;
             match &cmn.media_kind {
                 MediaKind::Text(media) => {
-                    log::info!("{}", logs::format_log_chat(
-                        "Received a text", cx.chat_id()));
+                    log::info!("{}", logs::format_log_chat("Received a text", cx.chat_id()));
                     ans = Answer::String(media.text.clone());
                 }
                 MediaKind::Sticker(media) => {
-                    log::info!("{}", logs::format_log_chat(
-                        "Received a sticker", cx.chat_id()));
+                    log::info!(
+                        "{}",
+                        logs::format_log_chat("Received a sticker", cx.chat_id())
+                    );
                     ans = Answer::Sticker(media.sticker.clone());
                 }
                 _ => {
@@ -60,8 +64,6 @@ async fn handle_message(
             let res = dialogue.react(cx, ans).await;
             res
         }
-        _ => {
-            default_response(cx, dialogue)
-        }
+        _ => default_response(cx, dialogue),
     }
 }
