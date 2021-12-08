@@ -27,7 +27,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install latest nightly
-    - uses: actions-rs/toolchain@v1
+      uses: actions-rs/toolchain@v1
       with:
           toolchain: stable
           override: true
@@ -41,6 +41,7 @@ jobs:
       with:
         command: check
         
-    - uses: mbrobbel/rustfmt-check@master
+    - name: Run rustfmt check
+      uses: mbrobbel/rustfmt-check@master
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
