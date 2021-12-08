@@ -25,7 +25,7 @@ async fn receive_names(
             exit()
         }
         Answer::Sticker(sticker) => {
-            let new_state = ReceiveNamesState { sticker, ..state };
+            let new_state = ReceiveNamesState { sticker };
             log::info!(
                 "{}",
                 logs::format_log_chat("Waiting for names", cx.chat_id())
