@@ -1,10 +1,10 @@
-mod states;
 mod answer;
+mod states;
 
 pub use answer::Answer;
 
-use states::{StartState, ReceiveNamesState, ReceiveStickerState};
 use derive_more::From;
+use states::{ReceiveNamesState, ReceiveStickerState, StartState};
 use teloxide::macros::Transition;
 
 #[derive(Clone, Transition, From)]
