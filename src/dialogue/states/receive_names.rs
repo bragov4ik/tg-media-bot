@@ -38,6 +38,10 @@ async fn receive_names(
 }
 
 async fn handle_string(state: ReceiveNamesState, cx: TransitionIn<AutoSend<Bot>>, text: String) {
+    let keys_iter = text.split_whitespace();
+    for _key in keys_iter {
+        cx.answer(_key).await.expect("Failed to echo aliases back");
+    }
     cx.answer(text).await.expect("Failed to echo aliases back");
     cx.answer_sticker(InputFile::FileId(state.sticker.file_id))
         .await

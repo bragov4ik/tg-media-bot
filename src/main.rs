@@ -1,5 +1,6 @@
 mod dialogue;
 mod logs;
+mod db;
 
 use crate::dialogue::{Answer, Dialogue};
 use teloxide::prelude::*;
