@@ -38,9 +38,11 @@ impl RedisConnection {
         }
     }
 
-    async fn set_aliases(&mut self, chat_id: i64, sticker_id: &str, aliases: &[&str]) {
-        for &alias in aliases {
-            self.set_alias(chat_id, sticker_id, alias);
+    async fn set_aliases<'a, T>(&mut self, chat_id: i64, sticker_id: &str, aliases: T) 
+        where
+            T: IntoIterator<Item = &'a str> {
+        for alias in aliases {
+            self.set_alias(chat_id, sticker_id, alias).await;
         }
     }
 
