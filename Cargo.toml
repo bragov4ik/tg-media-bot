@@ -10,6 +10,7 @@ teloxide = { version = "0.5", features = ["frunk", "macros", "auto-send"] }
 log = "0.4"
 pretty_env_logger = "0.4.0"
 tokio = { version =  "1.8", features = ["rt-multi-thread", "macros"] }
+tokio-stream = "0.1.8"
 
 frunk = "0.4"
 frunk_core = "0.4"
