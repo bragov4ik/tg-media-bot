@@ -2,8 +2,9 @@ use crate::dialogue::{states::ReceiveNamesState, Answer, Dialogue};
 use crate::logs;
 use frunk::Generic;
 use teloxide::prelude::*;
+use serde::{ Serialize, Deserialize };
 
-#[derive(Clone, Generic)]
+#[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct ReceiveStickerState;
 
 #[teloxide(subtransition)]

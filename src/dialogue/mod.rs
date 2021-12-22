@@ -6,8 +6,9 @@ pub use answer::Answer;
 use derive_more::From;
 use states::{ReceiveNamesState, ReceiveStickerState, StartState};
 use teloxide::macros::Transition;
+use serde::{ Serialize, Deserialize };
 
-#[derive(Clone, Transition, From)]
+#[derive(Clone, Transition, From, Serialize, Deserialize)]
 pub enum Dialogue {
     ReceiveSticker(ReceiveStickerState),
     ReceiveNames(ReceiveNamesState),

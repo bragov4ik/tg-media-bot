@@ -1,8 +1,9 @@
 use crate::dialogue::{states::ReceiveStickerState, Answer, Dialogue};
 use crate::logs;
 use teloxide::prelude::*;
+use serde::{ Serialize, Deserialize };
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct StartState;
 
 #[teloxide(subtransition)]

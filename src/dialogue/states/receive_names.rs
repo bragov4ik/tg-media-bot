@@ -3,8 +3,9 @@ use crate::logs;
 use frunk::Generic;
 use teloxide::prelude::*;
 use teloxide::types::{InputFile, Sticker};
+use serde::{ Serialize, Deserialize };
 
-#[derive(Clone, Generic)]
+#[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct ReceiveNamesState {
     pub sticker: Sticker,
 }
