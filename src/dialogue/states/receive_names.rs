@@ -1,9 +1,9 @@
 use crate::dialogue::{Answer, Dialogue};
 use crate::logs;
 use frunk::Generic;
+use serde::{Deserialize, Serialize};
 use teloxide::prelude::*;
 use teloxide::types::{InputFile, Sticker};
-use serde::{ Serialize, Deserialize };
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct ReceiveNamesState {

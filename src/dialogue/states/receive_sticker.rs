@@ -1,8 +1,8 @@
 use crate::dialogue::{states::ReceiveNamesState, Answer, Dialogue};
 use crate::logs;
 use frunk::Generic;
+use serde::{Deserialize, Serialize};
 use teloxide::prelude::*;
-use serde::{ Serialize, Deserialize };
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct ReceiveStickerState;

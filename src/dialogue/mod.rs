@@ -4,9 +4,9 @@ mod states;
 pub use answer::Answer;
 
 use derive_more::From;
+use serde::{Deserialize, Serialize};
 use states::{ReceiveNamesState, ReceiveStickerState, StartState};
 use teloxide::macros::Transition;
-use serde::{ Serialize, Deserialize };
 
 #[derive(Clone, Transition, From, Serialize, Deserialize)]
 pub enum Dialogue {

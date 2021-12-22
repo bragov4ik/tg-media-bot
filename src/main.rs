@@ -1,6 +1,6 @@
+mod db;
 mod dialogue;
 mod logs;
-mod db;
 
 use teloxide::prelude::*;
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -29,7 +29,7 @@ async fn run() {
     //         .expect("Some problem happened")
     // })
     // .await;
-    
+
     let args: Vec<String> = std::env::args().collect();
     let config = parse_args(args);
 
@@ -37,32 +37,37 @@ async fn run() {
         match db::RedisConnection::new(&config.redis_ip[..]).await {
             Ok(v) => v,
             Err(err) => panic!("Could not start redis connection: {}", err),
-        }
+        },
     ));
 
     Dispatcher::new(bot)
-        .messages_handler(|rx: UnboundedReceiver<UpdateWithCx<AutoSend<Bot>, Message>>| async move {
-            UnboundedReceiverStream::new(rx).for_each_concurrent(None, |cx | async {
-                let new_db_handle = Arc::clone(&db_shared);
-                handle_message(cx, new_db_handle).await
-            }).await;
-        }
-        ).dispatch().await;
-        log::info!("Closing the bot...");
+        .messages_handler(
+            |rx: UnboundedReceiver<UpdateWithCx<AutoSend<Bot>, Message>>| async move {
+                UnboundedReceiverStream::new(rx)
+                    .for_each_concurrent(None, |cx| async {
+                        let new_db_handle = Arc::clone(&db_shared);
+                        handle_message(cx, new_db_handle).await
+                    })
+                    .await;
+            },
+        )
+        .dispatch()
+        .await;
+    log::info!("Closing the bot...");
 }
 
 struct Config {
-    redis_ip: String
+    redis_ip: String,
 }
 
 fn parse_args(args: Vec<String>) -> Config {
     match args.len() {
-        1 => {
-            Config{ redis_ip: String::from("redis://127.0.0.1/") }
-        }
-        2 => {
-            Config{ redis_ip: String::from("redis://") + &args[1][..] + "/" }
-        }
+        1 => Config {
+            redis_ip: String::from("redis://127.0.0.1/"),
+        },
+        2 => Config {
+            redis_ip: String::from("redis://") + &args[1][..] + "/",
+        },
         _ => {
             print_usage();
             panic!();
@@ -78,8 +83,8 @@ async fn handle_dialogue(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     dialogue: Dialogue,
 ) -> TransitionOut<Dialogue> {
-    use teloxide::types::{MediaKind, MessageKind};
     use crate::dialogue::Answer;
+    use teloxide::types::{MediaKind, MessageKind};
 
     // Don't know hot to avoid repeating of this code properly
     fn default_response(
@@ -120,22 +125,34 @@ async fn handle_dialogue(
     }
 }
 
-async fn handle_message(cx: UpdateWithCx<AutoSend<Bot>, Message>, db_shared: Arc<Mutex<RedisConnection>>) {
-
-    
+async fn handle_message(
+    cx: UpdateWithCx<AutoSend<Bot>, Message>,
+    db_shared: Arc<Mutex<RedisConnection>>,
+) {
     let mut db_con = db_shared.lock().await;
 
     let chat_id = cx.update.chat_id();
     let from_id = cx.update.from().map(|u| u.id);
-    let dialogue: Dialogue = match db_con.get_dialogue(chat_id, from_id).await.map(Option::unwrap_or_default) {
+    let dialogue: Dialogue = match db_con
+        .get_dialogue(chat_id, from_id)
+        .await
+        .map(Option::unwrap_or_default)
+    {
         Ok(d) => d,
         Err(e) => {
             log::info!(
                 "{}",
-                logs::format_log_chat(&format!("Could not get dialogue (from {f:?}): {e:?}", f=from_id, e=e), chat_id)
+                logs::format_log_chat(
+                    &format!(
+                        "Could not get dialogue (from {f:?}): {e:?}",
+                        f = from_id,
+                        e = e
+                    ),
+                    chat_id
+                )
             );
-            return
-        },
+            return;
+        }
     };
 
     let stage = match handle_dialogue(cx, dialogue).await {
@@ -143,10 +160,17 @@ async fn handle_message(cx: UpdateWithCx<AutoSend<Bot>, Message>, db_shared: Arc
         Err(e) => {
             log::info!(
                 "{}",
-                logs::format_log_chat(&format!("Could not handle dialogue (from {f:?}): {e:?}", f=from_id, e=e), chat_id)
+                logs::format_log_chat(
+                    &format!(
+                        "Could not handle dialogue (from {f:?}): {e:?}",
+                        f = from_id,
+                        e = e
+                    ),
+                    chat_id
+                )
             );
-            return
-        },
+            return;
+        }
     };
 
     match stage {
