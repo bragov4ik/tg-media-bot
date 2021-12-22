@@ -1,7 +1,7 @@
 use redis::AsyncCommands;
 use redis::RedisResult;
 use serde::de::DeserializeOwned;
-use serde::{ Serialize, Deserialize };
+use serde::Serialize;
 use crate::logs::format_log_chat;
 use log::info;
 /*
