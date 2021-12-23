@@ -4,33 +4,44 @@ use redis::AsyncCommands;
 use redis::RedisResult;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-/*
-Wanted to use trait DBConnection with methods set_alias and get_sticker_id
-but async functions in traits are not that trivial, might add it later.
- */
 
+/* TODO: wrap connection in trait (not trivial with async). */
+/// Redis connection representation.
+///
+/// Provides simple interface for storing sticker aliases and dialogue
+/// state (with serialization).
 pub struct RedisConnection {
     connection: redis::aio::Connection,
 }
 
+// General implementation
 impl RedisConnection {
+    /// Create new connection to redis server in specified ip.
+    ///
+    /// IP should be formatted according to `redis` crate requirements
+    /// (currently similar to `redis://127.0.0.1/`)
     pub async fn new(redis_ip: &str) -> redis::RedisResult<RedisConnection> {
         let client = redis::Client::open(redis_ip)?;
         let con = client.get_async_connection().await?;
         Ok(RedisConnection { connection: con })
     }
-}
 
-// Database connection
-impl RedisConnection {
+    /// Get redis key for chat given its identifier.
     fn get_chat_key(chat_id: i64) -> String {
         format!("chat:{}", chat_id)
     }
+}
 
+impl RedisConnection {
+    /// Get redis key for aliases storage.
     fn get_aliases_key(chat_id: i64) -> String {
         RedisConnection::get_chat_key(chat_id) + "aliases"
     }
 
+    /// Store alias-sticker mapping in redis.
+    ///
+    /// If the alias is already tied to some sticker, overwrite it so the alias will be mapped to a new
+    /// sticker (for given `chat_id`).
     pub async fn set_alias(&mut self, chat_id: i64, alias: &str, sticker_id: &str) {
         let key: String = RedisConnection::get_aliases_key(chat_id);
         let set_result: RedisResult<()> = self.connection.hset(key, alias, sticker_id).await;
@@ -53,6 +64,7 @@ impl RedisConnection {
         }
     }
 
+    /// Set multiple aliases for a sticker.
     pub async fn set_aliases<'a, T>(&mut self, chat_id: i64, aliases: T, sticker_id: &str)
     where
         T: IntoIterator<Item = &'a str>,
@@ -62,6 +74,7 @@ impl RedisConnection {
         }
     }
 
+    /// Obtain sticker id for given alias in the chat (if any).
     pub async fn get_sticker_id(&mut self, chat_id: i64, alias: &str) -> Option<String> {
         let key: String = RedisConnection::get_aliases_key(chat_id);
         let set_result: RedisResult<String> = self.connection.hget(key, alias).await;
@@ -89,6 +102,7 @@ impl RedisConnection {
         }
     }
 
+    /// Unmap (remove) the alias for given chat id.
     pub async fn remove_alias(&mut self, chat_id: i64, alias: &str) {
         let key: String = RedisConnection::get_aliases_key(chat_id);
         let del_result: RedisResult<()> = self.connection.hdel(key, alias).await;
@@ -120,18 +134,26 @@ pub enum RedisStorageError {
     DialogueNotFound,
 }
 
-// Dialogue storage
+/// Dialogue storage.
+///
+/// Similar to `teloxide::dispatching::dialogue::Storage`, but with different dialogue for each user
+/// in the chat.
 impl RedisConnection {
+    /// Get redis key for dialogues storage for given chat id.
     fn get_dialogues_key(chat_id: i64) -> String {
         RedisConnection::get_chat_key(chat_id) + "dialogues"
     }
 
+    /// Get field name for given from_id (can be empty).
     fn get_from_field(from_id: Option<i64>) -> String {
         from_id
             .map(|x| x.to_string())
             .unwrap_or("NO_ID".to_string())
     }
 
+    /// Update a dialogue in the storage.
+    ///
+    /// Saves the `dialogue` in the redis database for given chat and user.
     pub async fn update_dialogue<'a, D>(
         &mut self,
         chat_id: i64,
@@ -172,6 +194,9 @@ impl RedisConnection {
         set_result.map_err(RedisStorageError::RedisError)
     }
 
+    /// Retrieve a dialogue from the storage.
+    ///
+    /// Givethe `dialogue` for given chat and user.
     pub async fn get_dialogue<'a, D>(
         &mut self,
         chat_id: i64,
@@ -198,6 +223,7 @@ impl RedisConnection {
         value
     }
 
+    /// Remove dialogue.
     pub async fn remove_dialogue(
         &mut self,
         chat_id: i64,

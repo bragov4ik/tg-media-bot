@@ -18,7 +18,7 @@ async fn main() {
 }
 
 /// Main run function.
-/// 
+///
 /// Sets everything up and starts the bot.
 async fn run() {
     teloxide::enable_logging!();
@@ -53,14 +53,14 @@ async fn run() {
 }
 
 /// Application configuration.
-/// 
+///
 /// Contains info necessary for running the bot, such as IP address of redis
 struct Config {
     redis_ip: String,
 }
 
 /// Parse config from splitted arguments.
-/// 
+///
 /// Assumes `std::env::args().collect()` ordering and length of vector.
 fn parse_args(args: Vec<String>) -> Config {
     match args.len() {
@@ -79,14 +79,17 @@ fn parse_args(args: Vec<String>) -> Config {
 
 /// Print out usage of the application in standard output
 fn print_usage() {
-    println!("Telegram bot. Run with no arguments or specify redis ip as first argument (without 'redis://' prefix).")
+    println!("Telegram bot. Run with no arguments or specify redis ip as first argument \
+    (without 'redis://' prefix).")
 }
 
 /// Handle message update in context of dialogue.
-/// 
-/// Log special cases such as receiving text or sticker, prepare and provide `Answer` argument for dialogue.
-/// 
-/// Returns result of the handling that contains `DialogueStage` (uses `teloxide` dialogues, find details there).
+///
+/// Log special cases such as receiving text or sticker, prepare and provide `Answer` argument for
+/// dialogue.
+///
+/// Returns result of the handling that contains `DialogueStage` (uses `teloxide` dialogues,
+/// find details there).
 async fn handle_dialogue(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     dialogue: Dialogue,
@@ -137,8 +140,9 @@ async fn handle_dialogue(
 }
 
 /// Handle message update.
-/// 
-/// Find `Dialogue` for `handle_dialogue` from db. Use the function result to update dialogue state in database.
+///
+/// Find `Dialogue` for `handle_dialogue` from db. Use the function result to update dialogue state
+/// in database.
 async fn handle_message(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     db_shared: Arc<Mutex<RedisConnection>>,
