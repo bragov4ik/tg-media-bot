@@ -1,6 +1,7 @@
 mod db;
 mod dialogue;
 mod logs;
+mod commands;
 
 use teloxide::prelude::*;
 use tokio_stream::wrappers::UnboundedReceiverStream;
