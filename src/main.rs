@@ -1,7 +1,7 @@
+mod commands;
 mod db;
 mod dialogue;
 mod logs;
-mod commands;
 
 use teloxide::prelude::*;
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -42,8 +42,7 @@ async fn run() {
             |rx: UnboundedReceiver<UpdateWithCx<AutoSend<Bot>, Message>>| async move {
                 UnboundedReceiverStream::new(rx)
                     .for_each_concurrent(None, |cx| async {
-                        let new_db_handle = Arc::clone(&db_shared);
-                        handle_message(cx, new_db_handle).await
+                        handle_message(cx, db_shared.clone()).await
                     })
                     .await;
             },
@@ -80,8 +79,10 @@ fn parse_args(args: Vec<String>) -> Config {
 
 /// Print out usage of the application in standard output
 fn print_usage() {
-    println!("Telegram bot. Run with no arguments or specify redis ip as first argument \
-    (without 'redis://' prefix).")
+    println!(
+        "Telegram bot. Run with no arguments or specify redis ip as first argument \
+    (without 'redis://' prefix)."
+    )
 }
 
 /// Handle message update in context of dialogue.
@@ -94,6 +95,7 @@ fn print_usage() {
 async fn handle_dialogue(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     dialogue: Dialogue,
+    db: Arc<Mutex<RedisConnection>>,
 ) -> TransitionOut<Dialogue> {
     use crate::dialogue::Answer;
     use teloxide::types::{MediaKind, MessageKind};
@@ -134,7 +136,8 @@ async fn handle_dialogue(
             }
 
             // Forward the user answer to dialogue to handle.
-            dialogue.react(cx, ans).await
+            let args = crate::dialogue::Args { ans, db };
+            dialogue.react(cx, args).await
         }
         _ => default_response(cx, dialogue),
     }
@@ -148,7 +151,7 @@ async fn handle_message(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     db_shared: Arc<Mutex<RedisConnection>>,
 ) {
-    let mut db_con = db_shared.lock().await;
+    let mut db_con: tokio::sync::MutexGuard<RedisConnection> = db_shared.lock().await;
 
     // Obtain dialogue from database
     let chat_id = cx.update.chat_id();
@@ -176,7 +179,7 @@ async fn handle_message(
     };
 
     // Handle the dialogue and receive results.
-    let stage = match handle_dialogue(cx, dialogue).await {
+    let stage = match handle_dialogue(cx, dialogue, db_shared.clone()).await {
         Ok(a) => a,
         Err(e) => {
             log::info!(

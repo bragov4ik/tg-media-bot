@@ -1,9 +1,16 @@
+use crate::commands::{handle_help, handle_start, Command};
+use crate::dialogue::answer::Args;
 use crate::dialogue::{Answer, Dialogue};
-use crate::logs;
+use crate::{logs, RedisConnection};
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
 use teloxide::prelude::*;
 use teloxide::types::{InputFile, Sticker};
+use teloxide::utils::command::BotCommand;
+
+use std::sync::Arc;
+// TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
+use tokio::sync::Mutex;
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct ReceiveNamesState {
@@ -14,37 +21,98 @@ pub struct ReceiveNamesState {
 async fn receive_names(
     state: ReceiveNamesState,
     cx: TransitionIn<AutoSend<Bot>>,
-    ans: Answer,
+    args: Args,
 ) -> TransitionOut<Dialogue> {
+    let ans: Answer = args.ans;
     match ans {
-        Answer::String(text) => {
-            log::info!(
-                "{}",
-                logs::format_log_chat("Finishing dialogue", cx.chat_id())
-            );
-            handle_string(state, cx, text).await;
-            exit()
-        }
-        Answer::Sticker(sticker) => {
-            let new_state = ReceiveNamesState { sticker };
+        Answer::Sticker(_) => {
             log::info!(
                 "{}",
                 logs::format_log_chat("Waiting for names", cx.chat_id())
             );
-            cx.answer("Great! Now specify aliases for the sticker separated by spaces.")
-                .await?;
-            next(new_state)
+            cx.answer(
+                "Sticker was already specified.\
+                Write aliases separated by space or use /cancel to stop adding them.",
+            )
+            .await?;
+            next(state)
+        }
+        Answer::String(ans_str) => {
+            match Command::parse(&ans_str, "") {
+                Ok(cmd) => {
+                    // Command is received
+                    respond_command(&cx, &cmd).await?;
+                    match cmd {
+                        Command::Cancel => exit(),
+                        _ => next(state),
+                    }
+                }
+                Err(_) => {
+                    // We got simple text
+                    log::info!(
+                        "{}",
+                        logs::format_log_chat("Received aliases, saving them...", cx.chat_id())
+                    );
+                    save_aliases(&state.sticker, &cx, &ans_str, args.db).await;
+                    log::info!(
+                        "{}",
+                        logs::format_log_chat("Finished saving aliases", cx.chat_id())
+                    );
+                    log::info!(
+                        "{}",
+                        logs::format_log_chat("Finishing dialogue", cx.chat_id())
+                    );
+                    exit()
+                }
+            }
         }
     }
 }
 
-async fn handle_string(state: ReceiveNamesState, cx: TransitionIn<AutoSend<Bot>>, text: String) {
-    let keys_iter = text.split_whitespace();
-    for _key in keys_iter {
-        cx.answer(_key).await.expect("Failed to echo aliases back");
+async fn respond_command(
+    cx: &TransitionIn<AutoSend<Bot>>,
+    cmd: &Command,
+) -> Result<(), teloxide::RequestError> {
+    match cmd {
+        Command::Add => {
+            log::info!(
+                "{}",
+                logs::format_log_chat("Ignoring /add at recieve names stage", cx.chat_id())
+            );
+            cx.answer("Already adding aliases.").await?;
+        }
+        Command::Start => {
+            log::info!(
+                "{}",
+                logs::format_log_chat("Printed start message", cx.chat_id())
+            );
+            handle_start(cx).await?;
+        }
+        Command::Help => {
+            log::info!(
+                "{}",
+                logs::format_log_chat("Printed help message", cx.chat_id())
+            );
+            handle_help(cx).await?;
+        }
+        Command::Cancel => {
+            log::info!(
+                "{}",
+                logs::format_log_chat("Cancelling sticker addition", cx.chat_id())
+            );
+        }
     }
-    cx.answer(text).await.expect("Failed to echo aliases back");
-    cx.answer_sticker(InputFile::FileId(state.sticker.file_id))
-        .await
-        .expect("Failed to echo stickers back");
+    Ok(())
+}
+
+async fn save_aliases(
+    sticker: &Sticker,
+    cx: &TransitionIn<AutoSend<Bot>>,
+    text: &String,
+    db: Arc<Mutex<RedisConnection>>,
+) {
+    let aliases = text.split_whitespace();
+    let mut db = db.lock().await;
+    db.set_aliases(cx.chat_id(), aliases, &sticker.file_id)
+        .await;
 }
