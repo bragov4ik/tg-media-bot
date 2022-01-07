@@ -5,7 +5,7 @@ use crate::{logs, RedisConnection};
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
 use teloxide::prelude::*;
-use teloxide::types::{InputFile, Sticker};
+use teloxide::types::{Sticker};
 use teloxide::utils::command::BotCommand;
 
 use std::sync::Arc;

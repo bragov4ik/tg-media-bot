@@ -102,6 +102,8 @@ impl RedisConnection {
         }
     }
 
+    // TODO: add support of sticker removal
+    #[allow(dead_code)]
     /// Unmap (remove) the alias for given chat id.
     pub async fn remove_alias(&mut self, chat_id: i64, alias: &str) {
         let key: String = RedisConnection::get_aliases_key(chat_id);
