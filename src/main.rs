@@ -177,6 +177,7 @@ async fn handle_message(
             return;
         }
     };
+    drop(db_con);
 
     // Handle the dialogue and receive results.
     let stage = match handle_dialogue(cx, dialogue, db_shared.clone()).await {
@@ -197,6 +198,7 @@ async fn handle_message(
         }
     };
 
+    let mut db_con: tokio::sync::MutexGuard<RedisConnection> = db_shared.lock().await;
     // Update the dialogue state in database.
     match stage {
         DialogueStage::Next(new_dialogue) => {

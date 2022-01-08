@@ -62,6 +62,7 @@ async fn receive_names(
                         "{}",
                         logs::format_log_chat("Finishing dialogue", cx.chat_id())
                     );
+                    cx.answer("Aliases are set successfully!").await?;
                     exit()
                 }
             }

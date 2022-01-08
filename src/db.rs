@@ -70,7 +70,7 @@ impl RedisConnection {
         T: IntoIterator<Item = &'a str>,
     {
         for alias in aliases {
-            self.set_alias(chat_id, sticker_id, alias).await;
+            self.set_alias(chat_id, alias, sticker_id).await;
         }
     }
 

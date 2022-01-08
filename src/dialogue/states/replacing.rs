@@ -91,7 +91,6 @@ async fn handle_replace(
     for sticker in stickers {
         cx.answer_sticker(sticker).await?;
     }
-    cx.answer("aboba").await?;
     Ok(())
 }
 
