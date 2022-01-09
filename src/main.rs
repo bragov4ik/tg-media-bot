@@ -111,8 +111,6 @@ async fn handle_dialogue(
             "{}",
             utils::format_log_chat("Received something else", cx.chat_id())
         );
-        // TODO: maybe ignore the case (not answer anything?)
-        cx.answer("Send a sticker to start.").await?;
         next(dialogue)
     }
 
@@ -173,7 +171,7 @@ async fn handle_message(
     {
         Ok(d) => d,
         Err(e) => {
-            log::info!(
+            log::warn!(
                 "{}",
                 utils::format_log_chat(
                     &format!(
@@ -193,7 +191,7 @@ async fn handle_message(
     let stage = match handle_dialogue(cx, dialogue, db_shared.clone()).await {
         Ok(a) => a,
         Err(e) => {
-            log::info!(
+            log::warn!(
                 "{}",
                 utils::format_log_chat(
                     &format!(

@@ -139,7 +139,7 @@ async fn remove_aliases(
             }
         }
         Err(e) => {
-            log::info!(
+            log::error!(
                 "{}",
                 utils::format_log_chat(&format!("Failed converting usize to i64: {}", e), cx.chat_id())
             );
