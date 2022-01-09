@@ -45,10 +45,6 @@ async fn add_names(
                 "{}",
                 utils::format_log_chat("Finished saving aliases", cx.chat_id())
             );
-            log::info!(
-                "{}",
-                utils::format_log_chat("Finishing dialogue", cx.chat_id())
-            );
             cx.answer("Aliases are set successfully!").await?;
             exit()
         }

@@ -171,7 +171,7 @@ async fn handle_message(
     {
         Ok(d) => d,
         Err(e) => {
-            log::warn!(
+            log::error!(
                 "{}",
                 utils::format_log_chat(
                     &format!(
@@ -191,7 +191,7 @@ async fn handle_message(
     let stage = match handle_dialogue(cx, dialogue, db_shared.clone()).await {
         Ok(a) => a,
         Err(e) => {
-            log::warn!(
+            log::error!(
                 "{}",
                 utils::format_log_chat(
                     &format!(
