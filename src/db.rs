@@ -1,5 +1,4 @@
 use crate::utils::format_log_chat;
-use log::info;
 use redis::AsyncCommands;
 use redis::RedisResult;
 use serde::de::DeserializeOwned;
@@ -47,7 +46,7 @@ impl RedisConnection {
         let set_result: RedisResult<()> = self.connection.hset(key, alias, sticker_id).await;
         match set_result {
             Ok(_) => {
-                info!(
+                log::info!(
                     "{}",
                     format_log_chat(
                         &format!("Saved alias '{a}' for '{s}'", a = alias, s = sticker_id),
@@ -56,7 +55,7 @@ impl RedisConnection {
                 );
             }
             Err(e) => {
-                info!(
+                log::info!(
                     "{}",
                     format_log_chat(&format!("Failed to save alias to DB: {}", e), chat_id)
                 );
@@ -70,7 +69,7 @@ impl RedisConnection {
         let set_result: RedisResult<String> = self.connection.hget(key, alias).await;
         match set_result {
             Ok(sticker_id) => {
-                info!(
+                log::info!(
                     "{}",
                     format_log_chat(
                         &format!("Retrieved '{s}' by alias '{a}'", a = alias, s = sticker_id),
@@ -80,7 +79,7 @@ impl RedisConnection {
                 Some(sticker_id)
             }
             Err(e) => {
-                info!(
+                log::info!(
                     "{}",
                     format_log_chat(
                         &format!("Failed find alias '{a}' in DB: {}", e, a = alias),
@@ -93,21 +92,37 @@ impl RedisConnection {
     }
 
     /// Unmap (remove) the alias for given chat id.
-    pub async fn remove_alias(&mut self, chat_id: i64, alias: &str) {
+    pub async fn remove_alias(&mut self, chat_id: i64, alias: &str) -> Result<(), RedisStorageError>{
         let key: String = RedisConnection::get_aliases_key(chat_id);
-        let del_result: RedisResult<()> = self.connection.hdel(key, alias).await;
-        match del_result {
-            Ok(_) => {
-                info!(
-                    "{}",
-                    format_log_chat(&format!("Removed alias '{a}'", a = alias), chat_id)
-                );
-            }
-            Err(e) => {
-                info!(
+        let n_removed: i64 = self.connection.hdel(key, alias).await.map_err(
+            |e| {
+                log::info!(
                     "{}",
                     format_log_chat(&format!("Failed to remove alias from DB: {}", e), chat_id)
                 );
+                RedisStorageError::RedisError(e)
+            })?;
+        match n_removed {
+            0 => {
+                log::info!(
+                    "{}",
+                    format_log_chat(&format!("Alias '{a}' was not found", a = alias), chat_id)
+                );
+                Err(RedisStorageError::AliasNotFound)
+            }
+            1 => {
+                log::info!(
+                    "{}",
+                    format_log_chat(&format!("Removed alias '{a}'", a = alias), chat_id)
+                );
+                Ok(())
+            }
+            n_unexpected => {
+                log::warn!(
+                    "{}",
+                    format_log_chat(&format!("'{a}' removal returned unexpected number: {n}", a = alias, n = n_unexpected), chat_id)
+                );
+                Ok(())
             }
         }
     }
@@ -120,8 +135,11 @@ pub enum RedisStorageError {
 
     RedisError(redis::RedisError),
 
-    /// Returned from [`RedisStorage::remove_dialogue`].
+    /// Returned from [`remove_dialogue`].
     DialogueNotFound,
+
+    /// Returned from [`remove_alias`]
+    AliasNotFound,
 }
 
 /// Dialogue storage.
@@ -158,7 +176,7 @@ impl RedisConnection {
 
         // Serialize
         let value: String = serde_json::to_string(&dialogue).map_err(|err| {
-            info!(
+            log::info!(
                 "{}",
                 format_log_chat(&format!("Failed to serialize dialogue: {}", err), chat_id)
             );
@@ -169,13 +187,13 @@ impl RedisConnection {
         let set_result: RedisResult<()> = self.connection.hset(&key, &field, &value).await;
         match &set_result {
             Ok(_) => {
-                info!(
+                log::info!(
                     "{}",
                     format_log_chat(&format!("Saved dialogue for '{f}'", f = field), chat_id)
                 );
             }
             Err(err) => {
-                info!(
+                log::info!(
                     "{}",
                     format_log_chat(&format!("Failed to save dialogue to DB: {}", err), chat_id)
                 );

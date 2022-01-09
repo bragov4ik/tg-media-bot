@@ -9,11 +9,12 @@ use frunk::Generic;
 use serde::{Deserialize, Serialize};
 use teloxide::prelude::*;
 use teloxide::types::InputFile;
-use teloxide::utils::command::BotCommand;
 
 use std::sync::Arc;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
 use tokio::sync::Mutex;
+
+use super::RemoveNamesState;
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct ReplacingState;
@@ -26,22 +27,20 @@ async fn replacing_state(
     args: Args,
 ) -> TransitionOut<Dialogue> {
     let ans: Answer = args.ans;
-    if let Answer::String(ans_str) = ans {
-        match Command::parse(&ans_str, "") {
-            Ok(cmd) => {
-                respond_command(&cx, &cmd).await?;
-                match cmd {
-                    Command::Add => next(AddStickerState),
-                    _ => next(state),
-                }
-            }
-            Err(_) => {
-                handle_replace(&cx, &ans_str, args.db).await?;
-                next(state)
+    match ans {
+        Answer::String(ans_str) => {
+            handle_replace(&cx, &ans_str, args.db).await?;
+            next(state)
+        }
+        Answer::Command(cmd) => {
+            respond_command(&cx, &cmd).await?;
+            match cmd {
+                Command::Add => next(AddStickerState),
+                Command::Remove => next(RemoveNamesState),
+                _ => next(state),
             }
         }
-    } else {
-        next(state)
+        Answer::Sticker(_) => next(state),
     }
 }
 
@@ -56,6 +55,14 @@ async fn respond_command(
                 utils::format_log_chat("Waiting for a sticker", cx.chat_id())
             );
             cx.answer("Send a sticker you want to assign alias to.")
+                .await?;
+        }
+        Command::Remove => {
+            log::info!(
+                "{}",
+                utils::format_log_chat("Waiting for names to remove", cx.chat_id())
+            );
+            cx.answer("Send aliases you want to remove separated by spaces.")
                 .await?;
         }
         Command::Start => {

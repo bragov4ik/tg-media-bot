@@ -10,6 +10,7 @@ pub enum Command {
     Start,
     Help,
     Add,
+    Remove,
     Cancel,
 }
 
@@ -20,9 +21,10 @@ pub async fn handle_start(
     cx.answer(
         "Hello, I send stickers when I see their specified \
     names in messages. To assign an alias to the sticker write /add. \
-    For more info use /help. \n\
+    For more info and commands see /help. \n\
     Note: I can properly work in groups only if given admin permissions, \
-    otherwise messages can't be seen.",
+    otherwise I can't see most messages (apart from bot commands, mentions\
+    , replies).",
     )
     .await?;
     Ok(())
@@ -35,6 +37,7 @@ pub async fn handle_help(
     cx.answer(
         "Commands:\n\
     /add - add new alias to sticker\n\
+    /remove - remove aliases\n\
     /cancel - cancel addition process\n\
     /start - show start message\n\
     /help - show this message",

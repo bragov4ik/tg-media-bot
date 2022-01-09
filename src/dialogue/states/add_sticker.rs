@@ -59,6 +59,14 @@ async fn respond_command(
             );
             cx.answer("Already adding new aliases.").await?;
         }
+        Command::Remove => {
+            log::info!(
+                "{}",
+                utils::format_log_chat("Ignoring /remove at adding stage", cx.chat_id())
+            );
+            cx.answer("To remove aliases /cancel addition first.")
+                .await?;
+        }
         Command::Start => {
             log::info!(
                 "{}",
