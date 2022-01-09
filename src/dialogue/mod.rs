@@ -5,7 +5,7 @@ pub use answer::{Answer, Args};
 
 use derive_more::From;
 use serde::{Deserialize, Serialize};
-use states::{AddNamesState, AddStickerState, ReplacingState};
+use states::{AddNamesState, AddStickerState, RemoveNamesState, ReplacingState};
 use teloxide::macros::Transition;
 
 /// Dialogue states.
@@ -15,6 +15,7 @@ use teloxide::macros::Transition;
 pub enum Dialogue {
     AddSticker(AddStickerState),
     AddNames(AddNamesState),
+    RemoveNames(RemoveNamesState),
     Replacing(ReplacingState),
 }
 

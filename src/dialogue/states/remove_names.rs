@@ -5,19 +5,16 @@ use crate::{utils, RedisConnection};
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
 use teloxide::prelude::*;
-use teloxide::types::Sticker;
 use std::sync::Arc;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
 use tokio::sync::Mutex;
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
-pub struct AddNamesState {
-    pub sticker: Sticker,
-}
+pub struct RemoveNamesState;
 
 #[teloxide(subtransition)]
-async fn add_names(
-    state: AddNamesState,
+async fn remove_names(
+    state: RemoveNamesState,
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
@@ -29,8 +26,7 @@ async fn add_names(
                 utils::format_log_chat("Waiting for names", cx.chat_id())
             );
             cx.answer(
-                "Sticker was already specified.\
-                Write aliases separated by space or use /cancel to stop adding them.",
+                "Write aliases you want to remove separated by space or use /cancel to stop.",
             )
             .await?;
             next(state)
@@ -38,18 +34,14 @@ async fn add_names(
         Answer::String(ans_str) => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Received aliases, saving them...", cx.chat_id())
+                utils::format_log_chat("Received aliases, removing them...", cx.chat_id())
             );
-            save_aliases(&state.sticker, &cx, &ans_str, args.db).await;
+            remove_aliases(&cx, &ans_str, args.db).await;
             log::info!(
                 "{}",
-                utils::format_log_chat("Finished saving aliases", cx.chat_id())
+                utils::format_log_chat("Finished removing aliases", cx.chat_id())
             );
-            log::info!(
-                "{}",
-                utils::format_log_chat("Finishing dialogue", cx.chat_id())
-            );
-            cx.answer("Aliases are set successfully!").await?;
+            cx.answer("Aliases have been removed successfully!").await?;
             exit()
         }
         Answer::Command(cmd) => {
@@ -70,9 +62,9 @@ async fn respond_command(
         Command::Add => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Ignoring /add at recieve names stage", cx.chat_id())
+                utils::format_log_chat("Ignoring /add at deletion stage", cx.chat_id())
             );
-            cx.answer("Already adding aliases.").await?;
+            cx.answer("To add new aliases /cancel removal first.").await?;
         }
         Command::Start => {
             log::info!(
@@ -91,15 +83,15 @@ async fn respond_command(
         Command::Cancel => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Cancelling sticker addition", cx.chat_id())
+                utils::format_log_chat("Cancelling alias removal", cx.chat_id())
             );
         }
     }
     Ok(())
 }
 
-async fn save_aliases(
-    sticker: &Sticker,
+
+async fn remove_aliases(
     cx: &TransitionIn<AutoSend<Bot>>,
     text: &String,
     db: Arc<Mutex<RedisConnection>>,
@@ -107,8 +99,6 @@ async fn save_aliases(
     let aliases = text.split_whitespace();
     let mut db = db.lock().await;
     for alias in aliases {
-        // Maybe it makes sense to create the futures first and then join on them all?
-        db.set_alias(cx.chat_id(), alias, &sticker.file_id)
-        .await;
+        db.remove_alias(cx.chat_id(), alias).await;
     }
 }

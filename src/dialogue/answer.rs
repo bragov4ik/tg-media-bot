@@ -1,10 +1,12 @@
-use crate::db::RedisConnection;
+use crate::{db::RedisConnection, commands::Command};
 use teloxide::types::Sticker;
 
 /// Enumeration representing possible user answer received by the bot.
 pub enum Answer {
+    // Any string or unsupported command
     String(String),
     Sticker(Sticker),
+    Command(Command),
 }
 
 // Struct for packing arguments passed to transition funcitons

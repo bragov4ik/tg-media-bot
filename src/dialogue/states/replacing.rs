@@ -3,7 +3,7 @@ use crate::dialogue::answer::Args;
 use crate::dialogue::{states::AddStickerState, Answer, Dialogue};
 use crate::{
     commands::{handle_help, handle_start, Command},
-    logs,
+    utils,
 };
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
@@ -53,7 +53,7 @@ async fn respond_command(
         Command::Add => {
             log::info!(
                 "{}",
-                logs::format_log_chat("Waiting for a sticker", cx.chat_id())
+                utils::format_log_chat("Waiting for a sticker", cx.chat_id())
             );
             cx.answer("Send a sticker you want to assign alias to.")
                 .await?;
@@ -61,21 +61,21 @@ async fn respond_command(
         Command::Start => {
             log::info!(
                 "{}",
-                logs::format_log_chat("Printed start message", cx.chat_id())
+                utils::format_log_chat("Printed start message", cx.chat_id())
             );
             handle_start(cx).await?;
         }
         Command::Help => {
             log::info!(
                 "{}",
-                logs::format_log_chat("Printed help message", cx.chat_id())
+                utils::format_log_chat("Printed help message", cx.chat_id())
             );
             handle_help(cx).await?;
         }
         Command::Cancel => {
             log::info!(
                 "{}",
-                logs::format_log_chat("Ignoring cancel in replacing mode", cx.chat_id())
+                utils::format_log_chat("Ignoring cancel in replacing mode", cx.chat_id())
             );
         }
     }

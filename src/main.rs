@@ -1,15 +1,17 @@
 mod commands;
 mod db;
 mod dialogue;
-mod logs;
+mod utils;
 
 use teloxide::prelude::*;
+use teloxide::utils::command::BotCommand;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
 use std::sync::Arc;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
 use tokio::sync::Mutex;
 
+use crate::commands::Command;
 use crate::db::RedisConnection;
 use crate::dialogue::Dialogue;
 
@@ -107,7 +109,7 @@ async fn handle_dialogue(
     ) -> TransitionOut<Dialogue> {
         log::info!(
             "{}",
-            logs::format_log_chat("Received something else", cx.chat_id())
+            utils::format_log_chat("Received something else", cx.chat_id())
         );
         // TODO: maybe ignore the case (not answer anything?)
         cx.answer("Send a sticker to start.").await?;
@@ -120,13 +122,21 @@ async fn handle_dialogue(
             let ans: Answer;
             match &cmn.media_kind {
                 MediaKind::Text(media) => {
-                    log::info!("{}", logs::format_log_chat("Received a text", cx.chat_id()));
-                    ans = Answer::String(media.text.clone());
+                    ans = match Command::parse(&media.text, "") {
+                        Ok(cmd) => {
+                            log::info!("{}", utils::format_log_chat("Received a bot command", cx.chat_id()));
+                            Answer::Command(cmd)
+                        }
+                        Err(_) => {
+                            log::info!("{}", utils::format_log_chat("Received a text or unsupported command", cx.chat_id()));
+                            Answer::String(media.text.clone())
+                        }
+                    };
                 }
                 MediaKind::Sticker(media) => {
                     log::info!(
                         "{}",
-                        logs::format_log_chat("Received a sticker", cx.chat_id())
+                        utils::format_log_chat("Received a sticker", cx.chat_id())
                     );
                     ans = Answer::Sticker(media.sticker.clone());
                 }
@@ -165,7 +175,7 @@ async fn handle_message(
         Err(e) => {
             log::info!(
                 "{}",
-                logs::format_log_chat(
+                utils::format_log_chat(
                     &format!(
                         "Could not get dialogue (from {f:?}): {e:?}",
                         f = from_id,
@@ -185,7 +195,7 @@ async fn handle_message(
         Err(e) => {
             log::info!(
                 "{}",
-                logs::format_log_chat(
+                utils::format_log_chat(
                     &format!(
                         "Could not handle dialogue (from {f:?}): {e:?}",
                         f = from_id,

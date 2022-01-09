@@ -1,4 +1,4 @@
-use crate::logs::format_log_chat;
+use crate::utils::format_log_chat;
 use log::info;
 use redis::AsyncCommands;
 use redis::RedisResult;
@@ -64,16 +64,6 @@ impl RedisConnection {
         }
     }
 
-    /// Set multiple aliases for a sticker.
-    pub async fn set_aliases<'a, T>(&mut self, chat_id: i64, aliases: T, sticker_id: &str)
-    where
-        T: IntoIterator<Item = &'a str>,
-    {
-        for alias in aliases {
-            self.set_alias(chat_id, alias, sticker_id).await;
-        }
-    }
-
     /// Obtain sticker id for given alias in the chat (if any).
     pub async fn get_sticker_id(&mut self, chat_id: i64, alias: &str) -> Option<String> {
         let key: String = RedisConnection::get_aliases_key(chat_id);
@@ -102,8 +92,6 @@ impl RedisConnection {
         }
     }
 
-    // TODO: add support of sticker removal
-    #[allow(dead_code)]
     /// Unmap (remove) the alias for given chat id.
     pub async fn remove_alias(&mut self, chat_id: i64, alias: &str) {
         let key: String = RedisConnection::get_aliases_key(chat_id);
