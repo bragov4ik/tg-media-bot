@@ -22,7 +22,7 @@ async fn add_sticker(
                 "{}",
                 utils::format_log_chat("Received sticker, waiting for aliases", cx.chat_id())
             );
-            cx.answer("Great! Now specify aliases for the sticker separated by spaces.")
+            cx.answer("Great! Now specify aliases for the sticker separated by spaces (without colons!).")
                 .await?;
             next(AddNamesState::up(state, sticker))
         }

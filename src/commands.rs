@@ -20,8 +20,11 @@ pub async fn handle_start(
 ) -> Result<(), teloxide::RequestError> {
     cx.answer(
         "Hello, I send stickers when I see their specified \
-    names in messages. To assign an alias to the sticker write /add. \
-    For more info and commands see /help. \n\
+    names in messages.\n\
+    To assign an alias to the sticker write /add and follow instructions. \n\
+    Then put an alias inside colons  (:alias:) inside a message and bot will\
+    send associated sticker.\n\
+    For more info and commands see /help. \n\n\
     Note: I can properly work in groups only if given admin permissions, \
     otherwise I can't see most messages (apart from bot commands, mentions\
     , replies).",
