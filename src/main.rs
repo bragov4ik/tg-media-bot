@@ -101,7 +101,7 @@ async fn handle_dialogue(
     use teloxide::types::{MediaKind, MessageKind};
 
     // Don't know hot to avoid repeating of this code properly
-    fn default_response(
+    async fn default_response(
         cx: UpdateWithCx<AutoSend<Bot>, Message>,
         dialogue: Dialogue,
     ) -> TransitionOut<Dialogue> {
@@ -110,7 +110,7 @@ async fn handle_dialogue(
             logs::format_log_chat("Received something else", cx.chat_id())
         );
         // TODO: maybe ignore the case (not answer anything?)
-        cx.answer("Send a sticker to start.");
+        cx.answer("Send a sticker to start.").await?;
         next(dialogue)
     }
 
@@ -131,7 +131,7 @@ async fn handle_dialogue(
                     ans = Answer::Sticker(media.sticker.clone());
                 }
                 _ => {
-                    return default_response(cx, dialogue);
+                    return default_response(cx, dialogue).await;
                 }
             }
 
@@ -139,7 +139,7 @@ async fn handle_dialogue(
             let args = crate::dialogue::Args { ans, db };
             dialogue.react(cx, args).await
         }
-        _ => default_response(cx, dialogue),
+        _ => default_response(cx, dialogue).await,
     }
 }
 

@@ -5,7 +5,7 @@ use crate::{logs, RedisConnection};
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
 use teloxide::prelude::*;
-use teloxide::types::{Sticker};
+use teloxide::types::Sticker;
 use teloxide::utils::command::BotCommand;
 
 use std::sync::Arc;
@@ -13,13 +13,13 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
-pub struct ReceiveNamesState {
+pub struct AddNamesState {
     pub sticker: Sticker,
 }
 
 #[teloxide(subtransition)]
-async fn receive_names(
-    state: ReceiveNamesState,
+async fn add_names(
+    state: AddNamesState,
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {

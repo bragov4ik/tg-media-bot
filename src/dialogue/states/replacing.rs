@@ -1,6 +1,6 @@
 use crate::db::RedisConnection;
 use crate::dialogue::answer::Args;
-use crate::dialogue::{states::ReceiveStickerState, Answer, Dialogue};
+use crate::dialogue::{states::AddStickerState, Answer, Dialogue};
 use crate::{
     commands::{handle_help, handle_start, Command},
     logs,
@@ -31,7 +31,7 @@ async fn replacing_state(
             Ok(cmd) => {
                 respond_command(&cx, &cmd).await?;
                 match cmd {
-                    Command::Add => next(ReceiveStickerState),
+                    Command::Add => next(AddStickerState),
                     _ => next(state),
                 }
             }

@@ -20,8 +20,7 @@ pub async fn handle_start(
     cx.answer(
         "Hello, I send stickers when I see their specified \
     names in messages. To assign an alias to the sticker write /add. \
-    For more info use /help. 
-    
+    For more info use /help. \n\
     Note: I can properly work in groups only if given admin permissions, \
     otherwise messages can't be seen.",
     )
@@ -34,10 +33,10 @@ pub async fn handle_help(
     cx: &UpdateWithCx<AutoSend<Bot>, Message>,
 ) -> Result<(), teloxide::RequestError> {
     cx.answer(
-        "Commands:\n
-    /add - add new alias to sticker
-    /cancel - cancel addition process
-    /start - show start message
+        "Commands:\n\
+    /add - add new alias to sticker\n\
+    /cancel - cancel addition process\n\
+    /start - show start message\n\
     /help - show this message",
     )
     .await?;

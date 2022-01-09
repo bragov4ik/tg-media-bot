@@ -1,9 +1,6 @@
 use crate::commands::{handle_help, handle_start, Command};
 use crate::dialogue::answer::Args;
-use crate::dialogue::{
-    states::{ReceiveNamesState},
-    Answer, Dialogue,
-};
+use crate::dialogue::{states::AddNamesState, Answer, Dialogue};
 use crate::logs;
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
@@ -11,11 +8,11 @@ use teloxide::prelude::*;
 use teloxide::utils::command::BotCommand;
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
-pub struct ReceiveStickerState;
+pub struct AddStickerState;
 
 #[teloxide(subtransition)]
-async fn receive_sticker(
-    state: ReceiveStickerState,
+async fn add_sticker(
+    state: AddStickerState,
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
@@ -28,7 +25,7 @@ async fn receive_sticker(
             );
             cx.answer("Great! Now specify aliases for the sticker separated by spaces.")
                 .await?;
-            next(ReceiveNamesState::up(state, sticker))
+            next(AddNamesState::up(state, sticker))
         }
         Answer::String(ans_str) => {
             match Command::parse(&ans_str, "") {
@@ -49,33 +46,12 @@ async fn receive_sticker(
                             cx.chat_id()
                         )
                     );
-                    cx.answer("Send sticker to assign aliases to or use /cancel.");
+                    cx.answer("Send sticker to assign aliases to or use /cancel.").await?;
                     next(state)
                 }
             }
         }
     }
-
-    // let ans: Answer = args.ans;
-    // match ans {
-    //     Answer::Sticker(sticker) => {
-    //         log::info!(
-    //             "{}",
-    //             logs::format_log_chat("Waiting for names", cx.chat_id())
-    //         );
-    //         cx.answer("Great! Now specify aliases for the sticker separated by spaces.")
-    //             .await?;
-    //         next(ReceiveNamesState::up(state, sticker))
-    //     }
-    //     Answer::String(_) => {
-    //         log::info!(
-    //             "{}",
-    //             logs::format_log_chat("Waiting for a sticker", cx.chat_id())
-    //         );
-    //         cx.answer("Please send sticker.").await?;
-    //         next(state)
-    //     }
-    // }
 }
 
 async fn respond_command(
