@@ -3,6 +3,7 @@ use redis::AsyncCommands;
 use redis::RedisResult;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashMap;
 
 /* TODO: wrap connection in trait (not trivial with async). */
 /// Redis connection representation.
@@ -92,16 +93,20 @@ impl RedisConnection {
     }
 
     /// Unmap (remove) the alias for given chat id.
-    pub async fn remove_alias(&mut self, chat_id: i64, alias: &str) -> Result<(), RedisStorageError>{
+    pub async fn remove_alias(
+        &mut self,
+        chat_id: i64,
+        alias: &str,
+    ) -> Result<(), RedisStorageError> {
         let key: String = RedisConnection::get_aliases_key(chat_id);
-        let n_removed: i64 = self.connection.hdel(key, alias).await.map_err(
-            |e| {
-                log::info!(
-                    "{}",
-                    format_log_chat(&format!("Failed to remove alias from DB: {}", e), chat_id)
-                );
-                RedisStorageError::RedisError(e)
-            })?;
+        let n_removed: i64 = self.connection.hdel(key, alias).await.map_err(|e| {
+            log::info!(
+                "{}",
+                format_log_chat(&format!("Failed to remove alias from DB: {}", e), chat_id)
+            );
+            RedisStorageError::RedisError(e)
+        })?;
+        // Log and form result
         match n_removed {
             0 => {
                 log::info!(
@@ -120,10 +125,61 @@ impl RedisConnection {
             n_unexpected => {
                 log::warn!(
                     "{}",
-                    format_log_chat(&format!("'{a}' removal returned unexpected number: {n}", a = alias, n = n_unexpected), chat_id)
+                    format_log_chat(
+                        &format!(
+                            "'{a}' removal returned unexpected number: {n}",
+                            a = alias,
+                            n = n_unexpected
+                        ),
+                        chat_id
+                    )
                 );
                 Ok(())
             }
+        }
+    }
+
+    /// Get mapping of all stickers to aliases in the chat.
+    /// Intended for listing the aliases.
+    pub async fn get_aliases(&mut self, chat_id: i64) -> Option<HashMap<String, Vec<String>>> {
+        let key: String = RedisConnection::get_aliases_key(chat_id);
+        // TODO: replace with hscan to avoid blocking DB.
+        // this way should work for now, at small scale.
+        let get_result: RedisResult<Vec<String>> = self.connection.hgetall(key).await;
+        if let Ok(list_result) = get_result {
+            let mut mapping: HashMap<String, Vec<String>> = HashMap::new();
+            for pair in list_result.chunks(2) {
+                if let [alias, sticker_id] = pair {
+                    match mapping.get_mut(sticker_id) {
+                        Some(list) => {
+                            log::trace!("Retrieved list {:#?} from mapping", list);
+                            list.push(alias.to_string());
+                        }
+                        None => {
+                            log::trace!(
+                                "No list for sticker w/ alias {} was found, creating",
+                                alias
+                            );
+                            mapping.insert(sticker_id.to_string(), vec![alias.to_string()]);
+                        }
+                    }
+                } else {
+                    log::error!(
+                        "{}",
+                        format_log_chat(
+                            &format!(
+                                "Invalid result of `HGETALL`: pair {p:#?}\
+                        does not match key-value pattern",
+                                p = pair
+                            ),
+                            chat_id
+                        )
+                    )
+                }
+            }
+            Some(mapping)
+        } else {
+            None
         }
     }
 }

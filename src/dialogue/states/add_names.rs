@@ -1,12 +1,12 @@
-use crate::commands::{handle_help, handle_start, Command};
+use crate::commands::{handle_help, handle_list, handle_start, Command};
 use crate::dialogue::answer::Args;
 use crate::dialogue::{Answer, Dialogue};
 use crate::{utils, RedisConnection};
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use teloxide::prelude::*;
 use teloxide::types::Sticker;
-use std::sync::Arc;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
 use tokio::sync::Mutex;
 
@@ -49,7 +49,7 @@ async fn add_names(
             exit()
         }
         Answer::Command(cmd) => {
-            respond_command(&cx, &cmd).await?;
+            respond_command(&cx, &cmd, args.db).await?;
             match cmd {
                 Command::Cancel => exit(),
                 _ => next(state),
@@ -61,6 +61,7 @@ async fn add_names(
 async fn respond_command(
     cx: &TransitionIn<AutoSend<Bot>>,
     cmd: &Command,
+    db: Arc<Mutex<RedisConnection>>,
 ) -> Result<(), teloxide::RequestError> {
     match cmd {
         Command::Add => {
@@ -92,6 +93,22 @@ async fn respond_command(
             );
             handle_help(cx).await?;
         }
+        Command::List => {
+            log::info!(
+                "{}",
+                utils::format_log_chat("Listing aliases", cx.chat_id())
+            );
+
+            let mut db = db.lock().await;
+            if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
+                handle_list(cx, aliases).await?;
+            }
+
+            log::info!(
+                "{}",
+                utils::format_log_chat("Finished listing", cx.chat_id())
+            );
+        }
         Command::Cancel => {
             log::info!(
                 "{}",
@@ -112,7 +129,6 @@ async fn save_aliases(
     let mut db = db.lock().await;
     for alias in aliases {
         // Maybe it makes sense to create the futures first and then join on them all?
-        db.set_alias(cx.chat_id(), alias, &sticker.file_id)
-        .await;
+        db.set_alias(cx.chat_id(), alias, &sticker.file_id).await;
     }
 }

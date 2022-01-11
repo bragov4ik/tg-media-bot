@@ -2,7 +2,7 @@ use crate::db::RedisConnection;
 use crate::dialogue::answer::Args;
 use crate::dialogue::{states::AddStickerState, Answer, Dialogue};
 use crate::{
-    commands::{handle_help, handle_start, Command},
+    commands::{handle_help, handle_list, handle_start, Command},
     utils,
 };
 use frunk::Generic;
@@ -33,7 +33,7 @@ async fn replacing_state(
             next(state)
         }
         Answer::Command(cmd) => {
-            respond_command(&cx, &cmd).await?;
+            respond_command(&cx, &cmd, args.db).await?;
             match cmd {
                 Command::Add => next(AddStickerState),
                 Command::Remove => next(RemoveNamesState),
@@ -47,6 +47,7 @@ async fn replacing_state(
 async fn respond_command(
     cx: &TransitionIn<AutoSend<Bot>>,
     cmd: &Command,
+    db: Arc<Mutex<RedisConnection>>,
 ) -> Result<(), teloxide::RequestError> {
     match cmd {
         Command::Add => {
@@ -78,6 +79,22 @@ async fn respond_command(
                 utils::format_log_chat("Printed help message", cx.chat_id())
             );
             handle_help(cx).await?;
+        }
+        Command::List => {
+            log::info!(
+                "{}",
+                utils::format_log_chat("Listing aliases", cx.chat_id())
+            );
+
+            let mut db = db.lock().await;
+            if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
+                handle_list(cx, aliases).await?;
+            }
+
+            log::info!(
+                "{}",
+                utils::format_log_chat("Finished listing", cx.chat_id())
+            );
         }
         Command::Cancel => {
             log::info!(

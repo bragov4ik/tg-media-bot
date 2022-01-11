@@ -1,6 +1,8 @@
 //! Telegram commands.
 //!
 //! Defines all available commands and gives implementations for some of them.
+use std::collections::HashMap;
+
 use teloxide::prelude::{AutoSend, Bot, Message, UpdateWithCx};
 use teloxide::utils::command::BotCommand;
 
@@ -9,6 +11,7 @@ use teloxide::utils::command::BotCommand;
 pub enum Command {
     Start,
     Help,
+    List,
     Add,
     Remove,
     Cancel,
@@ -46,5 +49,36 @@ pub async fn handle_help(
     /help - show this message",
     )
     .await?;
+    Ok(())
+}
+
+/// Write list of existing aliases.
+pub async fn handle_list<T: AsRef<str>>(
+    cx: &UpdateWithCx<AutoSend<Bot>, Message>,
+    stickers_aliases: HashMap<T, Vec<T>>,
+) -> Result<(), teloxide::RequestError> {
+    let mut message = String::new();
+    if stickers_aliases.is_empty() {
+        message.push_str("No aliases were found.");
+    } else {
+        message.push_str(
+            "Aliases for each sticker are \
+        in separate lines starting with \
+        \">\". Currently assigned aliases:\n",
+        );
+        for (_sticker, aliases) in stickers_aliases {
+            let mut next_line = String::new();
+            message.push_str("> ");
+
+            for alias in aliases {
+                next_line.push_str(alias.as_ref());
+                next_line.push(' ');
+            }
+
+            message.push_str(&next_line);
+            message.push('\n');
+        }
+    }
+    cx.answer(message).await?;
     Ok(())
 }

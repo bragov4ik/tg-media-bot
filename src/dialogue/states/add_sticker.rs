@@ -1,10 +1,13 @@
-use crate::commands::{handle_help, handle_start, Command};
+use crate::commands::{handle_help, handle_list, handle_start, Command};
+use crate::db::RedisConnection;
 use crate::dialogue::answer::Args;
 use crate::dialogue::{states::AddNamesState, Answer, Dialogue};
 use crate::utils;
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use teloxide::prelude::*;
+use tokio::sync::Mutex;
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct AddStickerState;
@@ -22,23 +25,23 @@ async fn add_sticker(
                 "{}",
                 utils::format_log_chat("Received sticker, waiting for aliases", cx.chat_id())
             );
-            cx.answer("Great! Now specify aliases for the sticker separated by spaces (without colons!).")
-                .await?;
+            cx.answer(
+                "Great! Now specify aliases for the sticker separated by spaces (without colons!).",
+            )
+            .await?;
             next(AddNamesState::up(state, sticker))
         }
         Answer::String(_) => {
             log::info!(
                 "{}",
-                utils::format_log_chat(
-                    "Ignoring text in recieve sticker stage",
-                    cx.chat_id()
-                )
+                utils::format_log_chat("Ignoring text in recieve sticker stage", cx.chat_id())
             );
-            cx.answer("Send sticker to assign aliases to or use /cancel.").await?;
+            cx.answer("Send sticker to assign aliases to or use /cancel.")
+                .await?;
             next(state)
         }
         Answer::Command(cmd) => {
-            respond_command(&cx, &cmd).await?;
+            respond_command(&cx, &cmd, args.db).await?;
             match cmd {
                 Command::Cancel => exit(),
                 _ => next(state),
@@ -50,6 +53,7 @@ async fn add_sticker(
 async fn respond_command(
     cx: &TransitionIn<AutoSend<Bot>>,
     cmd: &Command,
+    db: Arc<Mutex<RedisConnection>>,
 ) -> Result<(), teloxide::RequestError> {
     match cmd {
         Command::Add => {
@@ -80,6 +84,22 @@ async fn respond_command(
                 utils::format_log_chat("Printed help message", cx.chat_id())
             );
             handle_help(cx).await?;
+        }
+        Command::List => {
+            log::info!(
+                "{}",
+                utils::format_log_chat("Listing aliases", cx.chat_id())
+            );
+
+            let mut db = db.lock().await;
+            if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
+                handle_list(cx, aliases).await?;
+            }
+
+            log::info!(
+                "{}",
+                utils::format_log_chat("Finished listing", cx.chat_id())
+            );
         }
         Command::Cancel => {
             log::info!(

@@ -122,11 +122,20 @@ async fn handle_dialogue(
                 MediaKind::Text(media) => {
                     ans = match Command::parse(&media.text, "") {
                         Ok(cmd) => {
-                            log::info!("{}", utils::format_log_chat("Received a bot command", cx.chat_id()));
+                            log::info!(
+                                "{}",
+                                utils::format_log_chat("Received a bot command", cx.chat_id())
+                            );
                             Answer::Command(cmd)
                         }
                         Err(_) => {
-                            log::info!("{}", utils::format_log_chat("Received a text or unsupported command", cx.chat_id()));
+                            log::info!(
+                                "{}",
+                                utils::format_log_chat(
+                                    "Received a text or unsupported command",
+                                    cx.chat_id()
+                                )
+                            );
                             Answer::String(media.text.clone())
                         }
                     };
