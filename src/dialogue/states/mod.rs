@@ -1,7 +1,9 @@
-mod receive_names;
-mod receive_sticker;
-mod start;
+mod add_names;
+mod add_sticker;
+mod remove_names;
+mod replacing;
 
-pub use receive_names::ReceiveNamesState;
-pub use receive_sticker::ReceiveStickerState;
-pub use start::StartState;
+pub use add_names::AddNamesState;
+pub use add_sticker::AddStickerState;
+pub use remove_names::RemoveNamesState;
+pub use replacing::ReplacingState;
