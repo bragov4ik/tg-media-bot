@@ -2,7 +2,6 @@ mod answer;
 mod states;
 
 pub use answer::{Answer, Args};
-
 use derive_more::From;
 use serde::{Deserialize, Serialize};
 use states::{AddNamesState, AddStickerState, RemoveNamesState, ReplacingState};

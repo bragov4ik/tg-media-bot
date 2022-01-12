@@ -1,10 +1,11 @@
-use crate::commands::{handle_help, handle_list, handle_start, Command};
-use crate::dialogue::answer::Args;
-use crate::dialogue::{Answer, Dialogue};
-use crate::{utils, RedisConnection};
+use crate::{
+    commands::{handle_help, handle_list, handle_start, Command},
+    db::RedisConnection,
+    dialogue::{Answer, Args, Dialogue},
+    utils::format_log_chat,
+};
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::sync::Arc;
 use teloxide::prelude::*;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
@@ -22,10 +23,7 @@ async fn remove_names(
     let ans: Answer = args.ans;
     match ans {
         Answer::Sticker(_) => {
-            log::info!(
-                "{}",
-                utils::format_log_chat("Waiting for names", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Waiting for names", cx.chat_id()));
             cx.answer(
                 "Write aliases you want to remove separated by space or use /cancel to stop.",
             )
@@ -35,12 +33,12 @@ async fn remove_names(
         Answer::String(ans_str) => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Received aliases, removing them...", cx.chat_id())
+                format_log_chat("Received aliases, removing them...", cx.chat_id())
             );
             remove_aliases(&cx, &ans_str, args.db).await?;
             log::info!(
                 "{}",
-                utils::format_log_chat("Finished removing aliases", cx.chat_id())
+                format_log_chat("Finished removing aliases", cx.chat_id())
             );
             exit()
         }
@@ -63,7 +61,7 @@ async fn respond_command(
         Command::Add => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Ignoring /add at removal stage", cx.chat_id())
+                format_log_chat("Ignoring /add at removal stage", cx.chat_id())
             );
             cx.answer("To add new aliases /cancel removal first.")
                 .await?;
@@ -71,7 +69,7 @@ async fn respond_command(
         Command::Remove => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Ignoring /remove at removal stage", cx.chat_id())
+                format_log_chat("Ignoring /remove at removal stage", cx.chat_id())
             );
             cx.answer("Already removing aliases. Type them separated by spaces.")
                 .await?;
@@ -79,37 +77,28 @@ async fn respond_command(
         Command::Start => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Printing start message", cx.chat_id())
+                format_log_chat("Printing start message", cx.chat_id())
             );
             handle_start(cx).await?;
         }
         Command::Help => {
-            log::info!(
-                "{}",
-                utils::format_log_chat("Printing help message", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Printing help message", cx.chat_id()));
             handle_help(cx).await?;
         }
         Command::List => {
-            log::info!(
-                "{}",
-                utils::format_log_chat("Listing aliases", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Listing aliases", cx.chat_id()));
 
             let mut db = db.lock().await;
             if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
                 handle_list(cx, aliases).await?;
             }
 
-            log::info!(
-                "{}",
-                utils::format_log_chat("Finished listing", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Finished listing", cx.chat_id()));
         }
         Command::Cancel => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Cancelling alias removal", cx.chat_id())
+                format_log_chat("Cancelling alias removal", cx.chat_id())
             );
         }
     }
@@ -124,7 +113,8 @@ async fn remove_aliases(
     text: &String,
     db: Arc<Mutex<RedisConnection>>,
 ) -> Result<(), teloxide::RequestError> {
-    // HashSet lets us omit of repeating removals
+    use std::collections::HashSet;
+    // HashSet lets us omit repeating removals
     let aliases: HashSet<&str> = text.split_whitespace().collect();
     let mut db = db.lock().await;
 
@@ -165,7 +155,7 @@ async fn remove_aliases(
         Err(e) => {
             log::error!(
                 "{}",
-                utils::format_log_chat(
+                format_log_chat(
                     &format!("Failed converting usize to i64: {}", e),
                     cx.chat_id()
                 )

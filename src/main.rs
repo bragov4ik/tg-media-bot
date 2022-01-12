@@ -3,17 +3,13 @@ mod db;
 mod dialogue;
 mod utils;
 
-use teloxide::prelude::*;
-use teloxide::utils::command::BotCommand;
-use tokio_stream::wrappers::UnboundedReceiverStream;
-
-use std::sync::Arc;
-// TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
-use tokio::sync::Mutex;
-
-use crate::commands::Command;
 use crate::db::RedisConnection;
 use crate::dialogue::Dialogue;
+use crate::utils::format_log_chat;
+use std::sync::Arc;
+use teloxide::prelude::*;
+// TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
+use tokio::sync::Mutex;
 
 #[tokio::main]
 async fn main() {
@@ -24,6 +20,8 @@ async fn main() {
 ///
 /// Sets everything up and starts the bot.
 async fn run() {
+    use tokio_stream::wrappers::UnboundedReceiverStream;
+
     teloxide::enable_logging!();
     log::info!("Starting dialogue bot...");
 
@@ -89,18 +87,20 @@ fn print_usage() {
 
 /// Handle message update in context of dialogue.
 ///
-/// Log special cases such as receiving text or sticker, prepare and provide `Answer` argument for
-/// dialogue.
+/// Log special cases such as receiving text or sticker, prepare
+/// and provide `Answer` argument for dialogue.
 ///
-/// Returns result of the handling that contains `DialogueStage` (uses `teloxide` dialogues,
-/// find details there).
+/// Returns result of the handling that contains `DialogueStage`
+/// (uses `teloxide` dialogues, find details there).
 async fn handle_dialogue(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     dialogue: Dialogue,
     db: Arc<Mutex<RedisConnection>>,
 ) -> TransitionOut<Dialogue> {
+    use crate::commands::Command;
     use crate::dialogue::Answer;
     use teloxide::types::{MediaKind, MessageKind};
+    use teloxide::utils::command::BotCommand;
 
     // Don't know hot to avoid repeating of this code properly
     async fn default_response(
@@ -109,7 +109,7 @@ async fn handle_dialogue(
     ) -> TransitionOut<Dialogue> {
         log::info!(
             "{}",
-            utils::format_log_chat("Received something else", cx.chat_id())
+            format_log_chat("Received something else", cx.chat_id())
         );
         next(dialogue)
     }
@@ -124,14 +124,14 @@ async fn handle_dialogue(
                         Ok(cmd) => {
                             log::info!(
                                 "{}",
-                                utils::format_log_chat("Received a bot command", cx.chat_id())
+                                format_log_chat("Received a bot command", cx.chat_id())
                             );
                             Answer::Command(cmd)
                         }
                         Err(_) => {
                             log::info!(
                                 "{}",
-                                utils::format_log_chat(
+                                format_log_chat(
                                     "Received a text or unsupported command",
                                     cx.chat_id()
                                 )
@@ -141,10 +141,7 @@ async fn handle_dialogue(
                     };
                 }
                 MediaKind::Sticker(media) => {
-                    log::info!(
-                        "{}",
-                        utils::format_log_chat("Received a sticker", cx.chat_id())
-                    );
+                    log::info!("{}", format_log_chat("Received a sticker", cx.chat_id()));
                     ans = Answer::Sticker(media.sticker.clone());
                 }
                 _ => {
@@ -162,8 +159,8 @@ async fn handle_dialogue(
 
 /// Handle message update.
 ///
-/// Find `Dialogue` for `handle_dialogue` from db. Use the function result to update dialogue state
-/// in database.
+/// Find `Dialogue` for `handle_dialogue` from db. Use the function
+/// result to update dialogue state in database.
 async fn handle_message(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     db_shared: Arc<Mutex<RedisConnection>>,
@@ -182,7 +179,7 @@ async fn handle_message(
         Err(e) => {
             log::error!(
                 "{}",
-                utils::format_log_chat(
+                format_log_chat(
                     &format!(
                         "Could not get dialogue (from {f:?}): {e:?}",
                         f = from_id,
@@ -202,7 +199,7 @@ async fn handle_message(
         Err(e) => {
             log::error!(
                 "{}",
-                utils::format_log_chat(
+                format_log_chat(
                     &format!(
                         "Could not handle dialogue (from {f:?}): {e:?}",
                         f = from_id,

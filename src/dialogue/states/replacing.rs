@@ -1,20 +1,19 @@
-use crate::db::RedisConnection;
-use crate::dialogue::answer::Args;
-use crate::dialogue::{states::AddStickerState, Answer, Dialogue};
 use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
-    utils,
+    db::RedisConnection,
+    dialogue::{
+        states::{AddStickerState, RemoveNamesState},
+        Answer, Args, Dialogue,
+    },
+    utils::format_log_chat,
 };
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use teloxide::prelude::*;
 use teloxide::types::InputFile;
-
-use std::sync::Arc;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
 use tokio::sync::Mutex;
-
-use super::RemoveNamesState;
 
 #[derive(Clone, Generic, Serialize, Deserialize)]
 pub struct ReplacingState;
@@ -51,55 +50,40 @@ async fn respond_command(
 ) -> Result<(), teloxide::RequestError> {
     match cmd {
         Command::Add => {
-            log::info!(
-                "{}",
-                utils::format_log_chat("Waiting for a sticker", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Waiting for a sticker", cx.chat_id()));
             cx.answer("Send a sticker you want to assign alias to.")
                 .await?;
         }
         Command::Remove => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Waiting for names to remove", cx.chat_id())
+                format_log_chat("Waiting for names to remove", cx.chat_id())
             );
             cx.answer("Send aliases you want to remove separated by spaces.")
                 .await?;
         }
         Command::Start => {
-            log::info!(
-                "{}",
-                utils::format_log_chat("Printed start message", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Printed start message", cx.chat_id()));
             handle_start(cx).await?;
         }
         Command::Help => {
-            log::info!(
-                "{}",
-                utils::format_log_chat("Printed help message", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Printed help message", cx.chat_id()));
             handle_help(cx).await?;
         }
         Command::List => {
-            log::info!(
-                "{}",
-                utils::format_log_chat("Listing aliases", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Listing aliases", cx.chat_id()));
 
             let mut db = db.lock().await;
             if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
                 handle_list(cx, aliases).await?;
             }
 
-            log::info!(
-                "{}",
-                utils::format_log_chat("Finished listing", cx.chat_id())
-            );
+            log::info!("{}", format_log_chat("Finished listing", cx.chat_id()));
         }
         Command::Cancel => {
             log::info!(
                 "{}",
-                utils::format_log_chat("Ignoring cancel in replacing mode", cx.chat_id())
+                format_log_chat("Ignoring cancel in replacing mode", cx.chat_id())
             );
         }
     }
@@ -148,17 +132,4 @@ async fn extract_stickers(
 /// "sdfs:::fd" -> None
 fn parse_alias(word: &str) -> Option<&str> {
     word.strip_prefix(":")?.strip_suffix(":")
-}
-
-#[cfg(tests)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse() {
-        assert_eq!(parse_alias(":aboba:"), Some("aboba"));
-        assert_eq!(parse_alias("abeba:"), None);
-        assert_eq!(parse_alias(":aboeba"), None);
-        assert_eq!(parse_alias(":::sda as;dask121343aboeba"), None);
-    }
 }

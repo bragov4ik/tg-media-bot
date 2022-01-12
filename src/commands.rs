@@ -2,7 +2,6 @@
 //!
 //! Defines all available commands and gives implementations for some of them.
 use std::collections::HashMap;
-
 use teloxide::prelude::{AutoSend, Bot, Message, UpdateWithCx};
 use teloxide::utils::command::BotCommand;
 

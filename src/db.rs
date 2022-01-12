@@ -1,3 +1,7 @@
+//! Database connection.
+//!
+//! Handles and provides an interface to the database for bot.
+
 use crate::utils::format_log_chat;
 use redis::AsyncCommands;
 use redis::RedisResult;
@@ -40,8 +44,9 @@ impl RedisConnection {
 
     /// Store alias-sticker mapping in redis.
     ///
-    /// If the alias is already tied to some sticker, overwrite it so the alias will be mapped to a new
-    /// sticker (for given `chat_id`).
+    /// If the alias is already tied to some sticker, overwrite it
+    /// so the alias will be mapped to a new sticker (for given
+    /// `chat_id`). `sticker_id` is a file ID of the sticker.
     pub async fn set_alias(&mut self, chat_id: i64, alias: &str, sticker_id: &str) {
         let key: String = RedisConnection::get_aliases_key(chat_id);
         let set_result: RedisResult<()> = self.connection.hset(key, alias, sticker_id).await;
@@ -64,7 +69,7 @@ impl RedisConnection {
         }
     }
 
-    /// Obtain sticker id for given alias in the chat (if any).
+    /// Obtain sticker file id for given alias in the chat (if any).
     pub async fn get_sticker_id(&mut self, chat_id: i64, alias: &str) -> Option<String> {
         let key: String = RedisConnection::get_aliases_key(chat_id);
         let set_result: RedisResult<String> = self.connection.hget(key, alias).await;
@@ -200,8 +205,8 @@ pub enum RedisStorageError {
 
 /// Dialogue storage.
 ///
-/// Similar to `teloxide::dispatching::dialogue::Storage`, but with different dialogue for each user
-/// in the chat.
+/// Similar to `teloxide::dispatching::dialogue::Storage`,
+/// but with different dialogue for each user in the chat.
 impl RedisConnection {
     /// Get redis key for dialogues storage for given chat id.
     fn get_dialogues_key(chat_id: i64) -> String {
@@ -260,7 +265,7 @@ impl RedisConnection {
 
     /// Retrieve a dialogue from the storage.
     ///
-    /// Givethe `dialogue` for given chat and user.
+    /// Give the `dialogue` for given chat and user.
     pub async fn get_dialogue<'a, D>(
         &mut self,
         chat_id: i64,
