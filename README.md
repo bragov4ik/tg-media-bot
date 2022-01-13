@@ -1,4 +1,7 @@
 # Telegram media bot
+![Clippy workflow](https://github.com/bragov4ik/tg-media-bot/actions/workflows/clippy_check.yml/badge.svg)
+![Cargo workflow](https://github.com/bragov4ik/tg-media-bot/actions/workflows/cargo_check.yml/badge.svg)
+![Formatting workflow](https://github.com/bragov4ik/tg-media-bot/actions/workflows/formatting.yml/badge.svg)
 
 Telegram bot written in rust for aliasing different media (currently only stickers are supported). 
 
