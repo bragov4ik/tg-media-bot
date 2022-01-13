@@ -1,5 +1,5 @@
 [package]
-name = "ttsticker_bot"
+name = "tg-media-bot"
 version = "0.1.0"
 edition = "2021"
 
