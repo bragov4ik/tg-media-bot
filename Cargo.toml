@@ -4,6 +4,8 @@ description = "Telegram bot for aliasing media"
 version = "0.1.0"
 authors = ["Kirill Ivanov <bragov4ik@hotmail.com>"]
 repository = "https://github.com/bragov4ik/tg-media-bot"
+keywords = ["telegram", "bot", "media", "alias", "sticker"]
+categories = ["command-line-utilities"]
 license = "MIT"
 edition = "2021"
 
