@@ -47,6 +47,12 @@ You can use `cargo install` or manually clone into repository then either instal
 * Clone the repository into any folder
 * Type `cargo run --release` to build and run the project
 
+
+#### Arguments
+There is one optional argument - Redis address. You should specify only the address itself, without `redis://` prefix.
+
+Usage example: `tg-media-bot 127.0.0.1`
+
 ### Bugs/problems
 If any bugs related to the code were found, create an issue with its description.
 
