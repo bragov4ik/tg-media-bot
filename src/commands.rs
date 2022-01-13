@@ -45,7 +45,8 @@ pub async fn handle_help(
     /remove - remove aliases\n\
     /cancel - cancel addition process\n\
     /start - show start message\n\
-    /help - show this message",
+    /help - show this message\n\
+    /list - list assigned aliases",
     )
     .await?;
     Ok(())
