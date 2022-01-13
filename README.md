@@ -50,9 +50,9 @@ If any bugs related to the code were found, create an issue with its description
 ### Planned work/features
 Kind of sorted according to importance (higher - more preferable)
 * more automatic deployment
+* add proper *(unit)* tests
 * add support for any media
 * inline search
 * more elegant way to handle common commands
 * marking symbol specification (colons may cause conflict) *however can be avoided right now by not giving admin rights to the bot, so it does not see all the messages*
 * resolve TODOs *(not critical, just better practices)*
-* add proper *(unit)* tests
