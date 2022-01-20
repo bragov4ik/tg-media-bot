@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  
+
+env:
+  CARGO_TARGET_DIR: build
+  ARTIFACT_DIR: artifacts
+  REPO_NAME: ${{ github.event.repository.name }}
+  WINDOWS_TARGET: x86_64-pc-windows-msvc
+  LINUX_AMD64_TARGET: x86_64-unknown-linux-gnu
+
+jobs:
+  build-artifacts:
+    name: Build release binaries
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+    
+    steps:
+    - name: Set variables
+      id: variables
+      shell: bash
+      run: |
+        echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+        echo ::set-output name=bin_name::"${{ env.REPO_NAME }}-${{ matrix.target }}-${GITHUB_REF#refs/*/}"
+    
+    - uses: actions/checkout@v2
+
+    - name: Run build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --all-features --target ${{ matrix.target }}
+
+    - name: Create artifact directory
+      shell: bash
+      run: |
+        mkdir -p ${{ env.ARTIFACT_DIR }}
+
+    - name: Pack the binary (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: bash
+      run: |
+        tar -C ${{ env.CARGO_TARGET_DIR }}/${{ matrix.target }}/release/ -czvf ${{ env.ARTIFACT_DIR }}/${{ steps.variables.outputs.bin_name }}.tar.gz ${{ env.REPO_NAME }}.exe
+
+    - name: Pack the binary (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash
+      run: |
+        tar -C ${{ env.CARGO_TARGET_DIR }}/${{ matrix.target }}/release/ -czvf ${{ env.ARTIFACT_DIR }}/${{ steps.variables.outputs.bin_name }}.tar.gz ${{ env.REPO_NAME }}
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.3.1
+      with:
+        # Artifact name
+        name: ${{ env.REPO_NAME }}-${{ matrix.target }}
+        # A file, directory or wildcard pattern that describes what to upload
+        path: ${{ env.ARTIFACT_DIR }}/*
+        # The desired behavior if no files are found using the provided path.
+        if-no-files-found: error # optional, default is warn
+
+  release:
+    name: Create release draft
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download Windows Artifact archive
+      uses: actions/download-artifact@v2.1.0
+      with:
+        # Artifact name
+        name: ${{ env.REPO_NAME }}-${{ env.WINDOWS_TARGET }}
+        # Destination path
+        path: ${{ env.ARTIFACT_DIR }}
+
+    - name: Download Linux Artifact archive
+      uses: actions/download-artifact@v2.1.0
+      with:
+        # Artifact name
+        name: ${{ env.REPO_NAME }}-${{ env.LINUX_AMD64_TARGET }}
+        # Destination path
+        path: ${{ env.ARTIFACT_DIR }}
+
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "LICENSE,${{ env.ARTIFACT_DIR }}/*"
+        draft: true
+        bodyFile: ".github/workflows/release_body_template.md"
+        token: ${{ secrets.GITHUB_TOKEN }}
