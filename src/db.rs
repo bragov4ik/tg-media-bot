@@ -217,7 +217,7 @@ impl RedisConnection {
     fn get_from_field(from_id: Option<i64>) -> String {
         from_id
             .map(|x| x.to_string())
-            .unwrap_or("NO_ID".to_string())
+            .unwrap_or_else(|| "NO_ID".to_owned())
     }
 
     /// Update a dialogue in the storage.

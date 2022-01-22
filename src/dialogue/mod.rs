@@ -10,6 +10,7 @@ use teloxide::macros::Transition;
 /// Dialogue states.
 ///
 /// Uses `teloxide` dialogue system, see its docs for details and more examples.
+#[allow(clippy::large_enum_variant)] // because `Box` doesn't work with `Transition`
 #[derive(Clone, Transition, From, Serialize, Deserialize)]
 pub enum Dialogue {
     AddSticker(AddStickerState),

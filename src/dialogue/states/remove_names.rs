@@ -110,7 +110,7 @@ async fn respond_command(
 /// Handle the removal, report the result to `cx`.
 async fn remove_aliases(
     cx: &TransitionIn<AutoSend<Bot>>,
-    text: &String,
+    text: &str,
     db: Arc<Mutex<RedisConnection>>,
 ) -> Result<(), teloxide::RequestError> {
     use std::collections::HashSet;

@@ -109,14 +109,11 @@ async fn extract_stickers(
 ) -> Vec<InputFile> {
     let mut stickers: Vec<InputFile> = Vec::new();
     for word in text.split_whitespace() {
-        match parse_alias(word) {
-            Some(alias) => {
-                let mut db = db.lock().await;
-                if let Some(sticker_id) = db.get_sticker_id(chat_id, alias).await {
-                    stickers.push(InputFile::FileId(sticker_id));
-                }
+        if let Some(alias) = parse_alias(word) {
+            let mut db = db.lock().await;
+            if let Some(sticker_id) = db.get_sticker_id(chat_id, alias).await {
+                stickers.push(InputFile::FileId(sticker_id));
             }
-            None => {}
         }
     }
     stickers
@@ -131,5 +128,5 @@ async fn extract_stickers(
 /// ":cry:" -> Some("cry")
 /// "sdfs:::fd" -> None
 fn parse_alias(word: &str) -> Option<&str> {
-    word.strip_prefix(":")?.strip_suffix(":")
+    word.strip_prefix(':')?.strip_suffix(':')
 }
