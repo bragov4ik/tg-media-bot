@@ -58,7 +58,6 @@ If any bugs related to the code were found, create an issue with its description
 
 ### Planned work/features
 Kind of sorted according to importance (higher - more preferable)
-* more automatic deployment
 * add proper *(unit)* tests
 * add support for any media
 * inline search
