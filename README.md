@@ -30,23 +30,23 @@ The bot is (hopefully still) running at http://t.me/textmedia_bot.
 
 Older versions may work, however they were not tested.
 
-### Launching
-You can use `cargo install` or manually clone into repository then either install on a machine or build and run in the folder.
+### Usage
+You can download precompiled binaries from releases page or build the project by yourself.
 
+Before launching the bot make sure to
 * Start redis server
 * Specify bot API token in `TELOXIDE_TOKEN` enviromental variable
 
-#### Using cargo install
+#### Using precompiled binary
+* Download binary for your platform from [releases page](https://github.com/bragov4ik/tg-media-bot/releases)
+* Unpack it
+* Launch from command line
+
+#### Manual building
 * Type `cargo install --git https://github.com/bragov4ik/tg-media-bot.git`
 * Run the bot using `tg-media-bot` command *(if cargo installation folder is in your `PATH`)*
-#### Manual installation
-* Clone the repository into any folder
-* Use `cargo install` inside the folder
-* Write `tg-media-bot` to run *(if does not work check that cargo installation location is in your `PATH`)*
-#### Manual portable launch
-* Clone the repository into any folder
-* Type `cargo run --release` to build and run the project
 
+Or compile using any other method like `cargo run --release`
 
 #### Arguments
 There is one optional argument - Redis address. You should specify only the address itself, without `redis://` prefix.
