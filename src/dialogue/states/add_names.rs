@@ -109,7 +109,7 @@ async fn respond_command(
 async fn save_aliases(
     sticker: &Sticker,
     cx: &TransitionIn<AutoSend<Bot>>,
-    text: &String,
+    text: &str,
     db: Arc<Mutex<RedisConnection>>,
 ) {
     let aliases = text.split_whitespace();

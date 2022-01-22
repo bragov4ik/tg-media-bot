@@ -120,7 +120,12 @@ async fn handle_dialogue(
             let ans: Answer;
             match &cmn.media_kind {
                 MediaKind::Text(media) => {
-                    ans = match Command::parse(&media.text, "") {
+                    let bot_info: teloxide::types::Me =
+                        cx.requester.inner().get_me().send().await?;
+                    ans = match Command::parse(
+                        &media.text,
+                        bot_info.user.username.unwrap_or_default(),
+                    ) {
                         Ok(cmd) => {
                             log::info!(
                                 "{}",
