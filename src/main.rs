@@ -55,6 +55,7 @@ async fn run() {
 /// Application configuration.
 ///
 /// Contains info necessary for running the bot, such as IP address of redis
+#[derive(PartialEq, Debug)]
 struct Config {
     redis_ip: String,
 }
@@ -230,5 +231,29 @@ async fn handle_message(
                 log::error!("Storage::remove_dialogue failed: {:?}", e);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_args() {
+        let args = vec!["asdsad".to_owned()];
+        assert_eq!(
+            parse_args(args),
+            Config {
+                redis_ip: "redis://127.0.0.1/".to_owned()
+            }
+        );
+
+        let args = vec!["asdsad".to_owned(), "192.168.88.123".to_owned()];
+        assert_eq!(
+            parse_args(args),
+            Config {
+                redis_ip: format!("redis://{}/", "192.168.88.123").to_owned()
+            }
+        );
     }
 }
