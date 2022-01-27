@@ -1317,6 +1317,7 @@ dependencies = [
  "log",
  "pretty_env_logger",
  "redis",
+ "regex",
  "serde",
  "serde_json",
  "teloxide",

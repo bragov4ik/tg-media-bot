@@ -5,9 +5,10 @@ use crate::{
         states::{AddStickerState, RemoveNamesState},
         Answer, Args, Dialogue,
     },
-    utils::format_log_chat,
+    utils::{format_log_chat, format_log_time},
 };
 use frunk::Generic;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use teloxide::prelude::*;
@@ -108,25 +109,54 @@ async fn extract_stickers(
     db: Arc<Mutex<RedisConnection>>,
 ) -> Vec<InputFile> {
     let mut stickers: Vec<InputFile> = Vec::new();
-    for word in text.split_whitespace() {
-        if let Some(alias) = parse_alias(word) {
-            let mut db = db.lock().await;
-            if let Some(sticker_id) = db.get_sticker_id(chat_id, alias).await {
-                stickers.push(InputFile::FileId(sticker_id));
-            }
+    for alias in extract_aliases(text) {
+        let mut db = db.lock().await;
+        if let Some(sticker_id) = db.get_sticker_id(chat_id, alias).await {
+            stickers.push(InputFile::FileId(sticker_id));
         }
     }
     stickers
 }
 
-/// Parse given text as sticker alias.
+/// Extract aliases from given text.
 ///
-/// Matches the word with pattern ":<alias>:", returns <alias> as result. If the word does not fit the format,
-/// returns `None`.
+/// Matches the words with pattern ":<alias>:", returns vector of aliases as result.
 ///
 /// Examples:
-/// ":cry:" -> Some("cry")
-/// "sdfs:::fd" -> None
-fn parse_alias(word: &str) -> Option<&str> {
-    word.strip_prefix(':')?.strip_suffix(':')
+/// ":cry:" -> vec!("cry")
+/// "sdfssadas  sad fd" -> vec!()
+fn extract_aliases(text: &str) -> Vec<&str> {
+    if let Ok(r) = Regex::new(":([^:\\s]+):") {
+        r.captures_iter(text)
+            .filter_map(|c| c.get(1))
+            .map(|m| m.as_str())
+            .collect()
+    } else {
+        log::error!(
+            "{}",
+            format_log_time("Regex for extracting aliases does not compile!",)
+        );
+        vec![]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_aliases() {
+        let cases = vec![
+            (":cry:", vec!["cry"]),
+            ("inside:cry:text", vec!["cry"]),
+            ("inside :cry: text", vec!["cry"]),
+            (":cry::not_cry:", vec!["cry", "not_cry"]),
+            ("::", vec![]),
+            (":😭:", vec!["😭"]),
+            (":𝓬𝓻𝔂:", vec!["𝓬𝓻𝔂"]),
+        ];
+        for (source, target) in cases {
+            assert_eq!(extract_aliases(source), target);
+        }
+    }
 }
