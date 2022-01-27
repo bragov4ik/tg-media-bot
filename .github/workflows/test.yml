@@ -1,4 +1,4 @@
-name: Formatting
+name: Tests
 
 on:
   push:
@@ -10,14 +10,12 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  fmt-check:
-    name: Check formatting
+  cargo:
+    name: Run tests
     runs-on: ubuntu-latest
     
-    steps:
     - uses: actions/checkout@v2
-    - run: rustup component add rustfmt
-    - uses: actions-rs/cargo@v1
+    - uses: actions-rs/toolchain@v1
       with:
-        command: fmt
-        args: --all -- --check
+        toolchain: stable
+    - run: cargo test
