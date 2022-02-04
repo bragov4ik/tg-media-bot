@@ -98,68 +98,34 @@ async fn handle_dialogue(
     dialogue: Dialogue,
     db: Arc<Mutex<RedisConnection>>,
 ) -> TransitionOut<Dialogue> {
-    use crate::commands::Command;
     use crate::dialogue::Answer;
-    use teloxide::types::{MediaKind, MessageKind};
-    use teloxide::utils::command::BotCommand;
-
-    // Don't know hot to avoid repeating of this code properly
-    async fn default_response(
-        cx: UpdateWithCx<AutoSend<Bot>, Message>,
-        dialogue: Dialogue,
-    ) -> TransitionOut<Dialogue> {
-        log::info!(
-            "{}",
-            format_log_chat("Received something else", cx.chat_id())
-        );
-        next(dialogue)
-    }
+    use teloxide::types::MessageKind;
 
     match &cx.update.kind {
         MessageKind::Common(cmn) => {
-            // Parse `Answer` with logging the process.
-            let ans: Answer;
-            match &cmn.media_kind {
-                MediaKind::Text(media) => {
-                    let bot_info: teloxide::types::Me =
-                        cx.requester.inner().get_me().send().await?;
-                    ans = match Command::parse(
-                        &media.text,
-                        bot_info.user.username.unwrap_or_default(),
-                    ) {
-                        Ok(cmd) => {
-                            log::info!(
-                                "{}",
-                                format_log_chat("Received a bot command", cx.chat_id())
-                            );
-                            Answer::Command(cmd)
-                        }
-                        Err(_) => {
-                            log::info!(
-                                "{}",
-                                format_log_chat(
-                                    "Received a text or unsupported command",
-                                    cx.chat_id()
-                                )
-                            );
-                            Answer::String(media.text.clone())
-                        }
-                    };
-                }
-                MediaKind::Sticker(media) => {
-                    log::info!("{}", format_log_chat("Received a sticker", cx.chat_id()));
-                    ans = Answer::Sticker(media.sticker.clone());
-                }
-                _ => {
-                    return default_response(cx, dialogue).await;
-                }
+            let bot_info: teloxide::types::Me = cx.requester.inner().get_me().send().await?;
+            if let Some(ans) = Answer::parse(
+                &cmn.media_kind,
+                &bot_info.user.username.unwrap_or_default(),
+                cx.chat_id(),
+            ) {
+                // Forward the user answer to dialogue to handle.
+                let args = crate::dialogue::Args { ans, db };
+                dialogue.react(cx, args).await
+            } else {
+                next(dialogue)
             }
-
-            // Forward the user answer to dialogue to handle.
-            let args = crate::dialogue::Args { ans, db };
-            dialogue.react(cx, args).await
         }
-        _ => default_response(cx, dialogue).await,
+        other => {
+            log::info!(
+                "{}",
+                format_log_chat(
+                    &format!("Received other message type ({:?})", other),
+                    cx.chat_id()
+                )
+            );
+            next(dialogue)
+        }
     }
 }
 
