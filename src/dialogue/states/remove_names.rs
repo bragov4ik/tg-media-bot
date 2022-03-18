@@ -2,7 +2,7 @@ use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
     db::RedisConnection,
     dialogue::{Answer, Args, Dialogue},
-    utils::format_log_chat,
+    utils::log_chat,
 };
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,7 @@ async fn remove_names(
     let ans: Answer = args.ans;
     match ans {
         Answer::Sticker(_) => {
-            log::info!("{}", format_log_chat("Waiting for names", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Waiting for names");
             cx.answer(
                 "Write aliases you want to remove separated by space or use /cancel to stop.",
             )
@@ -31,15 +31,9 @@ async fn remove_names(
             next(state)
         }
         Answer::String(ans_str) => {
-            log::info!(
-                "{}",
-                format_log_chat("Received aliases, removing them...", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Received aliases, removing them...");
             remove_aliases(&cx, &ans_str, args.db).await?;
-            log::info!(
-                "{}",
-                format_log_chat("Finished removing aliases", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Finished removing aliases");
             exit()
         }
         Answer::Command(cmd) => {
@@ -59,47 +53,35 @@ async fn respond_command(
 ) -> Result<(), teloxide::RequestError> {
     match cmd {
         Command::Add => {
-            log::info!(
-                "{}",
-                format_log_chat("Ignoring /add at removal stage", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Ignoring /add at removal stage");
             cx.answer("To add new aliases /cancel removal first.")
                 .await?;
         }
         Command::Remove => {
-            log::info!(
-                "{}",
-                format_log_chat("Ignoring /remove at removal stage", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Ignoring /remove at removal stage");
             cx.answer("Already removing aliases. Type them separated by spaces.")
                 .await?;
         }
         Command::Start => {
-            log::info!(
-                "{}",
-                format_log_chat("Printing start message", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Printing start message");
             handle_start(cx).await?;
         }
         Command::Help => {
-            log::info!("{}", format_log_chat("Printing help message", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Printing help message");
             handle_help(cx).await?;
         }
         Command::List => {
-            log::info!("{}", format_log_chat("Listing aliases", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Listing aliases");
 
             let mut db = db.lock().await;
             if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
                 handle_list(cx, aliases).await?;
             }
 
-            log::info!("{}", format_log_chat("Finished listing", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Finished listing");
         }
         Command::Cancel => {
-            log::info!(
-                "{}",
-                format_log_chat("Cancelling alias removal", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Cancelling alias removal");
         }
     }
     Ok(())
@@ -153,13 +135,7 @@ async fn remove_aliases(
             }
         }
         Err(e) => {
-            log::error!(
-                "{}",
-                format_log_chat(
-                    &format!("Failed converting usize to i64: {}", e),
-                    cx.chat_id()
-                )
-            );
+            log_chat!(log::Level::Error, cx.chat_id(), "Failed converting usize to i64: {}", e);
         }
     }
     Ok(())

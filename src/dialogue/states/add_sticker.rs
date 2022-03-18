@@ -2,7 +2,7 @@ use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
     db::RedisConnection,
     dialogue::{states::AddNamesState, Answer, Args, Dialogue},
-    utils::format_log_chat,
+    utils::log_chat,
 };
 use frunk::Generic;
 use serde::{Deserialize, Serialize};
@@ -22,10 +22,7 @@ async fn add_sticker(
     let ans: Answer = args.ans;
     match ans {
         Answer::Sticker(sticker) => {
-            log::info!(
-                "{}",
-                format_log_chat("Received sticker, waiting for aliases", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Received sticker, waiting for aliases");
             cx.answer(
                 "Great! Now specify aliases for the sticker \
                 separated by spaces (without colons!).",
@@ -34,10 +31,7 @@ async fn add_sticker(
             next(AddNamesState::up(state, sticker))
         }
         Answer::String(_) => {
-            log::info!(
-                "{}",
-                format_log_chat("Ignoring text in recieve sticker stage", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Ignoring text in recieve sticker stage");
             cx.answer("Send sticker to assign aliases to or use /cancel.")
                 .await?;
             next(state)
@@ -59,42 +53,36 @@ async fn respond_command(
 ) -> Result<(), teloxide::RequestError> {
     match cmd {
         Command::Add => {
-            log::info!("{}", format_log_chat("Waiting for a sticker", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Waiting for a sticker");
             cx.answer("Already adding new aliases.").await?;
         }
         Command::Remove => {
-            log::info!(
-                "{}",
-                format_log_chat("Ignoring /remove at adding stage", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Ignoring /remove at adding stage");
             cx.answer("To remove aliases /cancel addition first.")
                 .await?;
         }
         Command::Start => {
-            log::info!("{}", format_log_chat("Printed start message", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Printed start message");
             handle_start(cx).await?;
         }
         Command::Help => {
-            log::info!("{}", format_log_chat("Printed help message", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Printed help message");
             handle_help(cx).await?;
         }
         Command::List => {
-            log::info!("{}", format_log_chat("Listing aliases", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Listing aliases");
 
             let mut db = db.lock().await;
             if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
                 handle_list(cx, aliases).await?;
             }
 
-            log::info!("{}", format_log_chat("Finished listing", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Finished listing");
         }
         Command::Cancel => {
-            log::info!(
-                "{}",
-                format_log_chat(
-                    "Cancelling alias addition in recieve sticker stage.",
-                    cx.chat_id()
-                )
+            log_chat!(
+                log::Level::Info, cx.chat_id(), 
+                "Cancelling alias addition in recieve sticker stage."
             );
             cx.answer("Cancelled alias addition.").await?;
         }

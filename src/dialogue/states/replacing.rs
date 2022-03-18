@@ -5,7 +5,7 @@ use crate::{
         states::{AddStickerState, RemoveNamesState},
         Answer, Args, Dialogue,
     },
-    utils::{format_log_chat, format_log_time},
+    utils::{log_chat, log_time},
 };
 use frunk::Generic;
 use regex::Regex;
@@ -51,41 +51,35 @@ async fn respond_command(
 ) -> Result<(), teloxide::RequestError> {
     match cmd {
         Command::Add => {
-            log::info!("{}", format_log_chat("Waiting for a sticker", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Waiting for a sticker");
             cx.answer("Send a sticker you want to assign alias to.")
                 .await?;
         }
         Command::Remove => {
-            log::info!(
-                "{}",
-                format_log_chat("Waiting for names to remove", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Waiting for names to remove");
             cx.answer("Send aliases you want to remove separated by spaces.")
                 .await?;
         }
         Command::Start => {
-            log::info!("{}", format_log_chat("Printed start message", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Printed start message");
             handle_start(cx).await?;
         }
         Command::Help => {
-            log::info!("{}", format_log_chat("Printed help message", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Printed help message");
             handle_help(cx).await?;
         }
         Command::List => {
-            log::info!("{}", format_log_chat("Listing aliases", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Listing aliases");
 
             let mut db = db.lock().await;
             if let Some(aliases) = db.get_aliases(cx.chat_id()).await {
                 handle_list(cx, aliases).await?;
             }
 
-            log::info!("{}", format_log_chat("Finished listing", cx.chat_id()));
+            log_chat!(log::Level::Info, cx.chat_id(), "Finished listing");
         }
         Command::Cancel => {
-            log::info!(
-                "{}",
-                format_log_chat("Ignoring cancel in replacing mode", cx.chat_id())
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Ignoring cancel in replacing mode");
         }
     }
     Ok(())
@@ -132,10 +126,7 @@ fn extract_aliases(text: &str) -> Vec<&str> {
             .map(|m| m.as_str())
             .collect()
     } else {
-        log::error!(
-            "{}",
-            format_log_time("Regex for extracting aliases does not compile!",)
-        );
+        log_time!(log::Level::Error, "Regex for extracting aliases does not compile!");
         vec![]
     }
 }

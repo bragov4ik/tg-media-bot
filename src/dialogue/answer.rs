@@ -1,4 +1,4 @@
-use crate::{commands::Command, utils::format_log_chat};
+use crate::{commands::Command, utils::log_chat};
 use teloxide::{types::MediaKind, utils::command::BotCommand};
 
 /// Enumeration representing possible user answer received by the bot.
@@ -52,10 +52,7 @@ impl Answer {
                 }
             }
         };
-        log::info!(
-            "{}",
-            format_log_chat(&format!("Received a {}", msg_type), chat_id)
-        );
+        log_chat!(log::Level::Info, chat_id, "Received a {}", msg_type);
         result
     }
 }

@@ -5,7 +5,7 @@ mod utils;
 
 use crate::db::RedisConnection;
 use crate::dialogue::Dialogue;
-use crate::utils::format_log_chat;
+use crate::utils::{ log_chat, log_time };
 use std::sync::Arc;
 use teloxide::prelude::*;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
@@ -23,7 +23,7 @@ async fn run() {
     use tokio_stream::wrappers::UnboundedReceiverStream;
 
     teloxide::enable_logging!();
-    log::info!("Starting dialogue bot...");
+    log_time!(log::Level::Info, "Starting dialogue bot...");
 
     let bot = Bot::from_env().auto_send();
 
@@ -49,7 +49,7 @@ async fn run() {
         )
         .dispatch()
         .await;
-    log::info!("Closing the bot...");
+    log_time!(log::Level::Info, "Closing the bot...");
 }
 
 /// Application configuration.
@@ -88,7 +88,7 @@ fn print_usage() {
 
 /// Handle message update in context of dialogue.
 ///
-/// Log special cases such as receiving text or sticker, prepare
+/// Prepare
 /// and provide `Answer` argument for dialogue.
 ///
 /// Returns result of the handling that contains `DialogueStage`
@@ -117,13 +117,7 @@ async fn handle_dialogue(
             }
         }
         other => {
-            log::info!(
-                "{}",
-                format_log_chat(
-                    &format!("Received other message type ({:?})", other),
-                    cx.chat_id()
-                )
-            );
+            log_chat!(log::Level::Info, cx.chat_id(), "Received other message type ({:?})", other);
             next(dialogue)
         }
     }
@@ -137,48 +131,35 @@ async fn handle_message(
     cx: UpdateWithCx<AutoSend<Bot>, Message>,
     db_shared: Arc<Mutex<RedisConnection>>,
 ) {
-    let mut db_con: tokio::sync::MutexGuard<RedisConnection> = db_shared.lock().await;
-
-    // Obtain dialogue from database
     let chat_id = cx.update.chat_id();
     let from_id = cx.update.from().map(|u| u.id);
-    let dialogue: Dialogue = match db_con
-        .get_dialogue(chat_id, from_id)
-        .await
-        .map(Option::unwrap_or_default)
-    {
-        Ok(d) => d,
-        Err(e) => {
-            log::error!(
-                "{}",
-                format_log_chat(
-                    &format!(
-                        "Could not get dialogue (from {f:?}): {e:?}",
-                        f = from_id,
-                        e = e
-                    ),
-                    chat_id
-                )
-            );
-            return;
+    let dialogue: Dialogue = {
+        let mut db_con: tokio::sync::MutexGuard<RedisConnection> = db_shared.lock().await;
+
+        // Obtain dialogue from database
+        match db_con
+            .get_dialogue(chat_id, from_id)
+            .await
+            .map(Option::unwrap_or_default)
+        {
+            Ok(d) => d,
+            Err(e) => {
+                log_chat!(
+                    log::Level::Error, chat_id,
+                    "Could not get dialogue (from {f:?}): {e:?}", f = from_id, e = e
+                );
+                return;
+            }
         }
     };
-    drop(db_con);
 
     // Handle the dialogue and receive results.
     let stage = match handle_dialogue(cx, dialogue, db_shared.clone()).await {
         Ok(a) => a,
         Err(e) => {
-            log::error!(
-                "{}",
-                format_log_chat(
-                    &format!(
-                        "Could not handle dialogue (from {f:?}): {e:?}",
-                        f = from_id,
-                        e = e
-                    ),
-                    chat_id
-                )
+            log_chat!(
+                log::Level::Error, chat_id,
+                "Could not handle dialogue (from {f:?}): {e:?}", f = from_id, e = e
             );
             return;
         }
@@ -188,13 +169,15 @@ async fn handle_message(
     // Update the dialogue state in database.
     match stage {
         DialogueStage::Next(new_dialogue) => {
-            if let Err(e) = db_con.update_dialogue(chat_id, from_id, new_dialogue).await {
-                log::error!("Storage::update_dialogue failed: {:?}", e);
+            if let Err(e) = db_con.update_dialogue(
+                chat_id, from_id, new_dialogue
+            ).await {
+                log_chat!(log::Level::Error, chat_id, "Storage::update_dialogue failed: {:?}", e);
             }
         }
         DialogueStage::Exit => {
             if let Err(e) = db_con.remove_dialogue(chat_id, from_id).await {
-                log::error!("Storage::remove_dialogue failed: {:?}", e);
+                log_chat!(log::Level::Error, chat_id, "Storage::remove_dialogue failed: {:?}", e);
             }
         }
     }
