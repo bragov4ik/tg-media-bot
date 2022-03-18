@@ -47,7 +47,7 @@ impl Answer {
                         }
                     }
                 } else {
-                    msg_type = format!("non-sticker type ({:?})", other);
+                    msg_type = format!("non-text type ({:?})", other);
                     None
                 }
             }
