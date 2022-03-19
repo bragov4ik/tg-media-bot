@@ -60,5 +60,5 @@ impl Answer {
 // Struct for packing arguments passed to transition funcitons
 pub struct Args {
     pub ans: Answer,
-    pub db: std::sync::Arc<tokio::sync::Mutex<crate::db::RedisConnection>>,
+    pub db: std::sync::Arc<tokio::sync::Mutex<crate::db_old::RedisConnection>>,
 }

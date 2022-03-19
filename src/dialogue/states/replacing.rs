@@ -1,6 +1,6 @@
 use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
-    db::RedisConnection,
+    db_old::RedisConnection,
     dialogue::{
         states::{AddStickerState, RemoveNamesState},
         Answer, Args, Dialogue,

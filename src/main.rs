@@ -1,9 +1,10 @@
 mod commands;
+mod db_old;
 mod db;
 mod dialogue;
 mod utils;
 
-use crate::db::RedisConnection;
+use crate::db_old::RedisConnection;
 use crate::dialogue::Dialogue;
 use crate::utils::{ log_chat, log_time };
 use std::sync::Arc;
@@ -31,7 +32,7 @@ async fn run() {
     let config = parse_args(args);
 
     let db_shared: Arc<Mutex<RedisConnection>> = Arc::new(Mutex::new(
-        match db::RedisConnection::new(&config.redis_ip[..]).await {
+        match db_old::RedisConnection::new(&config.redis_ip[..]).await {
             Ok(v) => v,
             Err(err) => panic!("Could not start redis connection: {}", err),
         },
