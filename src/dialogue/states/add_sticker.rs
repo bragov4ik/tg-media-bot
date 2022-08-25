@@ -1,7 +1,7 @@
 use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
     db_old::RedisConnection,
-    dialogue::{states::AddNamesState, Answer, Args, Dialogue},
+    dialogue::{states::AddNamesState, UserInput, Args, Dialogue},
     utils::log_chat,
 };
 use frunk::Generic;
@@ -19,9 +19,9 @@ async fn add_sticker(
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
-    let ans: Answer = args.ans;
+    let ans: UserInput = args.ans;
     match ans {
-        Answer::Sticker(sticker) => {
+        UserInput::Sticker(sticker) => {
             log_chat!(log::Level::Info, cx.chat_id(), "Received sticker, waiting for aliases");
             cx.answer(
                 "Great! Now specify aliases for the sticker \
@@ -30,13 +30,13 @@ async fn add_sticker(
             .await?;
             next(AddNamesState::up(state, sticker))
         }
-        Answer::String(_) => {
+        UserInput::String(_) => {
             log_chat!(log::Level::Info, cx.chat_id(), "Ignoring text in recieve sticker stage");
             cx.answer("Send sticker to assign aliases to or use /cancel.")
                 .await?;
             next(state)
         }
-        Answer::Command(cmd) => {
+        UserInput::Command(cmd) => {
             respond_command(&cx, &cmd, args.db).await?;
             match cmd {
                 Command::Cancel => exit(),

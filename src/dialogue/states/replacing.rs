@@ -3,7 +3,7 @@ use crate::{
     db_old::RedisConnection,
     dialogue::{
         states::{AddStickerState, RemoveNamesState},
-        Answer, Args, Dialogue,
+        UserInput, Args, Dialogue,
     },
     utils::{log_chat, log_time},
 };
@@ -26,13 +26,13 @@ async fn replacing_state(
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
-    let ans: Answer = args.ans;
+    let ans: UserInput = args.ans;
     match ans {
-        Answer::String(ans_str) => {
+        UserInput::String(ans_str) => {
             handle_replace(&cx, &ans_str, args.db).await?;
             next(state)
         }
-        Answer::Command(cmd) => {
+        UserInput::Command(cmd) => {
             respond_command(&cx, &cmd, args.db).await?;
             match cmd {
                 Command::Add => next(AddStickerState),
@@ -40,7 +40,7 @@ async fn replacing_state(
                 _ => next(state),
             }
         }
-        Answer::Sticker(_) => next(state),
+        UserInput::Sticker(_) => next(state),
     }
 }
 

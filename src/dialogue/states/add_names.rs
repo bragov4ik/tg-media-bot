@@ -1,7 +1,7 @@
 use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
     db_old::RedisConnection,
-    dialogue::{Answer, Args, Dialogue},
+    dialogue::{UserInput, Args, Dialogue},
     utils::log_chat,
 };
 use frunk::Generic;
@@ -23,9 +23,9 @@ async fn add_names(
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
-    let ans: Answer = args.ans;
+    let ans: UserInput = args.ans;
     match ans {
-        Answer::Sticker(_) => {
+        UserInput::Sticker(_) => {
             log_chat!(log::Level::Info, cx.chat_id(), "Waiting for names");
             cx.answer(
                 "Sticker was already specified.\
@@ -34,14 +34,14 @@ async fn add_names(
             .await?;
             next(state)
         }
-        Answer::String(ans_str) => {
+        UserInput::String(ans_str) => {
             log_chat!(log::Level::Info, cx.chat_id(), "Received aliases, saving them...");
             save_aliases(&state.sticker, &cx, &ans_str, args.db).await;
             log_chat!(log::Level::Info, cx.chat_id(), "Finished saving aliases");
             cx.answer("Aliases are set successfully!").await?;
             exit()
         }
-        Answer::Command(cmd) => {
+        UserInput::Command(cmd) => {
             respond_command(&cx, &cmd, args.db).await?;
             match cmd {
                 Command::Cancel => exit(),
