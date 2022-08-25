@@ -1,7 +1,7 @@
 use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
     db::RedisConnection,
-    dialogue::{Answer, Args, Dialogue},
+    dialogue::{UserInput, Args, Dialogue},
     utils::format_log_chat,
 };
 use frunk::Generic;
@@ -20,9 +20,9 @@ async fn remove_names(
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
-    let ans: Answer = args.ans;
+    let ans: UserInput = args.ans;
     match ans {
-        Answer::Sticker(_) => {
+        UserInput::Sticker(_) => {
             log::info!("{}", format_log_chat("Waiting for names", cx.chat_id()));
             cx.answer(
                 "Write aliases you want to remove separated by space or use /cancel to stop.",
@@ -30,7 +30,7 @@ async fn remove_names(
             .await?;
             next(state)
         }
-        Answer::String(ans_str) => {
+        UserInput::String(ans_str) => {
             log::info!(
                 "{}",
                 format_log_chat("Received aliases, removing them...", cx.chat_id())
@@ -42,7 +42,7 @@ async fn remove_names(
             );
             exit()
         }
-        Answer::Command(cmd) => {
+        UserInput::Command(cmd) => {
             respond_command(&cx, &cmd, args.db).await?;
             match cmd {
                 Command::Cancel => exit(),

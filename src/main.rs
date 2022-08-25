@@ -98,22 +98,23 @@ async fn handle_dialogue(
     dialogue: Dialogue,
     db: Arc<Mutex<RedisConnection>>,
 ) -> TransitionOut<Dialogue> {
-    use crate::dialogue::Answer;
+    use crate::dialogue::UserInput;
     use teloxide::types::MessageKind;
 
     match &cx.update.kind {
         MessageKind::Common(cmn) => {
             let bot_info: teloxide::types::Me = cx.requester.inner().get_me().send().await?;
-            if let Some(ans) = Answer::parse(
+            match UserInput::parse(
                 &cmn.media_kind,
                 &bot_info.user.username.unwrap_or_default(),
                 cx.chat_id(),
             ) {
-                // Forward the user answer to dialogue to handle.
-                let args = crate::dialogue::Args { ans, db };
-                dialogue.react(cx, args).await
-            } else {
-                next(dialogue)
+                Ok(input) => {
+                    // Forward the user answer to dialogue to handle.
+                    let args = crate::dialogue::Args { ans, db };
+                    dialogue.react(cx, args).await
+                },
+                Err(_) => next(dialogue),
             }
         }
         other => {
