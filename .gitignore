@@ -16,3 +16,6 @@ target/
 
 # VSCode config
 .vscode
+
+# Telegram bot access token
+telegram_token

@@ -7,6 +7,7 @@ use crate::db::RedisConnection;
 use crate::dialogue::Dialogue;
 use crate::utils::format_log_chat;
 use std::sync::Arc;
+use tokio::fs;
 use teloxide::prelude::*;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
 use tokio::sync::Mutex;
@@ -14,6 +15,11 @@ use tokio::sync::Mutex;
 #[tokio::main]
 async fn main() {
     run().await;
+}
+
+async fn read_token() -> String {
+    fs::read_to_string("./telegram_token").await
+        .expect("Could not find token file './telegram_token'")
 }
 
 /// Main run function.
@@ -25,7 +31,8 @@ async fn run() {
     teloxide::enable_logging!();
     log::info!("Starting dialogue bot...");
 
-    let bot = Bot::from_env().auto_send();
+    let token = read_token().await;
+    let bot = Bot::new(token).auto_send();
 
     let args: Vec<String> = std::env::args().collect();
     let config = parse_args(args);

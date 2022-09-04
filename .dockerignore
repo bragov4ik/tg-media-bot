@@ -1,0 +1,16 @@
+# Github configuration
+.github/
+
+# Build artifacts (we use mounted cache for this purpose)
+target
+
+# Git stuff
+.git/
+.gitignore
+
+# We don't need dockerfile inside docker
+Dockerfile
+
+# Unnecessary documentation
+LICENSE
+README.md
