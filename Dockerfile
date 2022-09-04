@@ -14,4 +14,4 @@ COPY telegram_token ./telegram_token
 
 #RUN --mount=type=secret,id=telegram_token export "TELOXIDE_TOKEN=${cat /run/secrets/telegram_token}"
 
-CMD ["/tg-media-bot"]
+ENTRYPOINT ["/tg-media-bot"]

@@ -19,3 +19,6 @@ target/
 
 # Telegram bot access token
 telegram_token
+
+# Redis backup
+*.rdb
