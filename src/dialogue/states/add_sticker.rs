@@ -19,7 +19,7 @@ async fn add_sticker(
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
-    let ans: UserInput = args.ans;
+    let ans: UserInput = args.input;
     match ans {
         UserInput::Sticker(sticker) => {
             log::info!(

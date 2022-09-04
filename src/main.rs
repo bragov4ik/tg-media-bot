@@ -111,7 +111,7 @@ async fn handle_dialogue(
             ) {
                 Ok(input) => {
                     // Forward the user answer to dialogue to handle.
-                    let args = crate::dialogue::Args { ans, db };
+                    let args = crate::dialogue::Args { input, db };
                     dialogue.react(cx, args).await
                 },
                 Err(_) => next(dialogue),

@@ -23,7 +23,7 @@ async fn add_names(
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
-    let ans: UserInput = args.ans;
+    let ans: UserInput = args.input;
     match ans {
         UserInput::Sticker(_) => {
             log::info!("{}", format_log_chat("Waiting for names", cx.chat_id()));

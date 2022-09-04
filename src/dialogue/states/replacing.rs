@@ -26,7 +26,7 @@ async fn replacing_state(
     cx: TransitionIn<AutoSend<Bot>>,
     args: Args,
 ) -> TransitionOut<Dialogue> {
-    let ans: UserInput = args.ans;
+    let ans: UserInput = args.input;
     match ans {
         UserInput::String(ans_str) => {
             handle_replace(&cx, &ans_str, args.db).await?;

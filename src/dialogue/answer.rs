@@ -66,6 +66,6 @@ impl UserInput {
 
 // Struct for packing arguments passed to transition funcitons
 pub struct Args {
-    pub ans: UserInput,
+    pub input: UserInput,
     pub db: std::sync::Arc<tokio::sync::Mutex<crate::db::RedisConnection>>,
 }
