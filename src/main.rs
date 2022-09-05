@@ -37,6 +37,7 @@ async fn run() {
     let args: Vec<String> = std::env::args().collect();
     let config = parse_args(args);
 
+    log::info!("Connecting to redis on {}", config.redis_ip);
     let db_shared: Arc<Mutex<RedisConnection>> = Arc::new(Mutex::new(
         match db::RedisConnection::new(&config.redis_ip[..]).await {
             Ok(v) => v,

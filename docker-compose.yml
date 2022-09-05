@@ -13,7 +13,7 @@ services:
     secrets:
       - telegram-token
     <<: *common
-    command: -db
+    command: db
 
   db:
     image: redis:7-alpine
