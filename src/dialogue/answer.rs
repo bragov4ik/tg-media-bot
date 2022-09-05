@@ -29,28 +29,33 @@ impl UserInput {
         }
     }
 
-    pub fn parse(msg: &MediaKind, bot_name: &str, chat_id: i64) -> Result<UserInput, UnsupportedType> {
+    pub fn parse(
+        msg: &MediaKind,
+        bot_name: &str,
+        chat_id: i64,
+    ) -> Result<UserInput, UnsupportedType> {
         let result = match &msg {
-            MediaKind::Sticker(media) => {
-                UserInput::Sticker(media.sticker.clone())
-            }
+            MediaKind::Sticker(media) => UserInput::Sticker(media.sticker.clone()),
             other => {
                 if let Some(text) = UserInput::get_text_from_media(other) {
                     match Command::parse(text, bot_name) {
                         Ok(cmd) => UserInput::Command(cmd),
-                        Err(_) => UserInput::String(text.to_owned())
+                        Err(_) => UserInput::String(text.to_owned()),
                     }
                 } else {
                     let type_str = format!("{:?}", other);
                     log::debug!(
                         "{}",
-                        format_log_chat(&format!("Received unsupported message type {}", type_str), chat_id)
+                        format_log_chat(
+                            &format!("Received unsupported message type {}", type_str),
+                            chat_id
+                        )
                     );
                     return Err(UnsupportedType(type_str));
                 }
             }
         };
-        
+
         let msg_type = match result {
             UserInput::Sticker(_) => "sticker",
             UserInput::Command(_) => "command",

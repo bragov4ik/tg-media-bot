@@ -1,7 +1,7 @@
 use crate::{
     commands::{handle_help, handle_list, handle_start, Command},
     db::RedisConnection,
-    dialogue::{states::AddNamesState, UserInput, Args, Dialogue},
+    dialogue::{states::AddNamesState, Args, Dialogue, UserInput},
     utils::format_log_chat,
 };
 use frunk::Generic;

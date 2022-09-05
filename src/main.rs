@@ -7,8 +7,8 @@ use crate::db::RedisConnection;
 use crate::dialogue::Dialogue;
 use crate::utils::format_log_chat;
 use std::sync::Arc;
-use tokio::fs;
 use teloxide::prelude::*;
+use tokio::fs;
 // TODO: get rid of using tokio's Mutex https://tokio.rs/tokio/tutorial/channels
 use tokio::sync::Mutex;
 
@@ -18,7 +18,8 @@ async fn main() {
 }
 
 async fn read_token() -> String {
-    fs::read_to_string("./telegram_token").await
+    fs::read_to_string("./telegram_token")
+        .await
         .expect("Could not find token file './telegram_token'")
 }
 
@@ -45,6 +46,7 @@ async fn run() {
         },
     ));
 
+    log::info!("Starting to handle requests...");
     Dispatcher::new(bot)
         .messages_handler(
             |rx: UnboundedReceiver<UpdateWithCx<AutoSend<Bot>, Message>>| async move {
@@ -121,7 +123,7 @@ async fn handle_dialogue(
                     // Forward the user answer to dialogue to handle.
                     let args = crate::dialogue::Args { input, db };
                     dialogue.react(cx, args).await
-                },
+                }
                 Err(_) => next(dialogue),
             }
         }

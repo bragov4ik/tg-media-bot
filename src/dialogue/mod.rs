@@ -1,7 +1,7 @@
 mod answer;
 mod states;
 
-pub use answer::{UserInput, Args};
+pub use answer::{Args, UserInput};
 use derive_more::From;
 use serde::{Deserialize, Serialize};
 use states::{AddNamesState, AddStickerState, RemoveNamesState, ReplacingState};
