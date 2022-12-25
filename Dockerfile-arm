@@ -1,0 +1,17 @@
+# syntax = docker/dockerfile:1.2
+
+FROM messense/rust-musl-cross:aarch64-musl as build
+
+COPY . /home/rust/src
+RUN --mount=type=cache,target=/root/.cargo/registry --mount=type=cache,target=/home/rust/src/target \
+    cargo b --release --target aarch64-unknown-linux-musl && \
+    cp target/aarch64-unknown-linux-musl/release/tg-media-bot tg-media-bot
+
+FROM gcr.io/distroless/static
+
+COPY --from=build /home/rust/src/tg-media-bot /tg-media-bot
+COPY telegram_token ./telegram_token
+
+#RUN --mount=type=secret,id=telegram_token export "TELOXIDE_TOKEN=${cat /run/secrets/telegram_token}"
+
+ENTRYPOINT ["/tg-media-bot"]

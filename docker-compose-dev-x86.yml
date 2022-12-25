@@ -1,0 +1,35 @@
+version: "3"
+
+x-common:
+  &common
+  restart: always
+  logging:
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  backend:
+    build: ./
+    depends_on:
+      - db
+    secrets:
+      - telegram-token
+    <<: *common
+    command: db
+
+  db:
+    image: redis:7-alpine
+    command: redis-server --save 60 1
+    volumes:
+      - type: volume
+        source: redis-data
+        target: /data
+
+volumes:
+  redis-data:
+    # external: true
+
+secrets:
+  telegram-token:
+    file: ./telegram_token
